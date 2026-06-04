@@ -1,16 +1,6 @@
 {
-  "description": "ai-sdlc: drain loop (Stop) + PR quality-gate and AI-disclaimer guards (PreToolUse on Bash).",
+  "description": "ai-sdlc: PR quality-gate backstop and AI-disclaimer guard (PreToolUse on Bash). Drain/auto loop via background workers + /loop, not a Stop hook.",
   "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/drain-stop-hook.sh\""
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash",

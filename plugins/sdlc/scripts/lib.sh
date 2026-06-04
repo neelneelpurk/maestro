@@ -47,17 +47,26 @@ unset _sdlc_cfg
 : "${SDLC_LABEL_BUG:=bug}"
 : "${SDLC_LABEL_ENHANCEMENT:=enhancement}"
 
-# Pipeline labels added by this plugin.
-: "${SDLC_LABEL_AFK:=afk}"                 # can be implemented with no human
-: "${SDLC_LABEL_HITL:=hitl}"               # needs human interaction
-: "${SDLC_LABEL_PRD:=prd}"                 # a PRD / epic parent issue
-: "${SDLC_LABEL_IN_PROGRESS:=in-progress}" # an agent is actively working it
-: "${SDLC_LABEL_IN_REVIEW:=in-review}"     # a PR is open, awaiting human review
+# Pipeline labels added by this plugin (see docs/GLOSSARY.md for the state machine).
+: "${SDLC_LABEL_AUTO:=auto}"                # autonomous lane; skips the ready-for-agent gate
+: "${SDLC_LABEL_HITL:=hitl}"                # needs a human; never auto-picked
+: "${SDLC_LABEL_PRD:=prd}"                  # a PRD / epic parent issue
+: "${SDLC_LABEL_ROADMAP:=roadmap}"          # a roadmap parent issue
+: "${SDLC_LABEL_TECH_DEBT:=tech-debt}"      # a tech-debt item
+: "${SDLC_LABEL_IN_PROGRESS:=in-progress}"  # a worker is implementing it
+: "${SDLC_LABEL_IN_REVIEW:=in-review}"      # ship: PR to the default branch, awaiting human review
+: "${SDLC_LABEL_WAITING_CLOSURE:=waiting-for-human-closure}" # drain/auto: PR merged into the integration branch
+: "${SDLC_LABEL_BLOCKED:=blocked}"          # board marker: has open dependencies
+: "${SDLC_LABEL_INTEGRATION:=integration}"  # the integration -> default-branch PR
+# Retained for back-compat with existing issues (no longer a pick requirement).
+: "${SDLC_LABEL_AFK:=afk}"
 
 # Behaviour.
 : "${SDLC_MAX_PARALLEL:=3}"                          # default fan-out concurrency
 : "${SDLC_WORKTREE_DIR:=../ai-sdlc-worktrees}"       # where per-issue worktrees go
-: "${SDLC_BRANCH_PREFIX:=sdlc/issue-}"               # branch name prefix
+: "${SDLC_BRANCH_PREFIX:=sdlc/issue-}"               # issue branch name prefix
+: "${SDLC_INTEGRATION_PREFIX:=sdlc/integration-}"    # integration branch name prefix
+: "${SDLC_ASSIGNEE:=@me}"                            # drain works issues assigned to this user
 
 # ---------------------------------------------------------------------------
 # Output helpers
@@ -88,6 +97,24 @@ sdlc_repo() {
   printf '%s\n' "$_SDLC_REPO"
 }
 
+# sdlc_main_root — absolute path to the MAIN working tree, even when called from
+# inside a linked worktree (so shared state under .sdlc/ resolves consistently).
+sdlc_main_root() {
+  if [[ -z "${_SDLC_MAIN_ROOT:-}" ]]; then
+    local cdir
+    cdir="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+    if [[ -n "$cdir" ]]; then
+      _SDLC_MAIN_ROOT="$(cd "$(dirname "$cdir")" && pwd)"
+    else
+      _SDLC_MAIN_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+    fi
+  fi
+  printf '%s\n' "$_SDLC_MAIN_ROOT"
+}
+
+# sdlc_state_dir — the .sdlc dir in the main working tree (shared across worktrees).
+sdlc_state_dir() { printf '%s/%s\n' "$(sdlc_main_root)" "$SDLC_DIR"; }
+
 # sdlc_default_branch — print the repo's default branch (e.g. main).
 sdlc_default_branch() {
   if [[ -z "${_SDLC_DEFAULT_BRANCH:-}" ]]; then
@@ -96,6 +123,10 @@ sdlc_default_branch() {
   fi
   printf '%s\n' "$_SDLC_DEFAULT_BRANCH"
 }
+
+# sdlc_issue_id <issue-number> — print the issue's NUMERIC database id (.id),
+# which the sub-issue and dependency REST endpoints require (NOT the #number).
+sdlc_issue_id() { gh api "repos/$(sdlc_repo)/issues/$1" --jq '.id' 2>/dev/null; }
 
 # sdlc_slug "Some Title" — kebab-case, ascii, max ~50 chars, for branch names.
 sdlc_slug() {
@@ -152,12 +183,13 @@ sdlc_version() {
 # Timestamps via `date` are fine here (these scripts are not workflow-replayed).
 sdlc_log() {
   local event="$1"; shift || true
-  mkdir -p "$SDLC_DIR"
+  local dir; dir="$(sdlc_state_dir 2>/dev/null || echo "$SDLC_DIR")"
+  mkdir -p "$dir"
   local kv_json="{}" k v
   for kv in "$@"; do
     k="${kv%%=*}"; v="${kv#*=}"
     kv_json="$(jq -c --arg k "$k" --arg v "$v" '. + {($k): $v}' <<<"$kv_json")"
   done
   jq -cn --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg event "$event" --argjson data "$kv_json" \
-    '{ts: $ts, event: $event} + $data' >>"${SDLC_DIR}/log.jsonl"
+    '{ts: $ts, event: $event} + $data' >>"${dir}/log.jsonl"
 }

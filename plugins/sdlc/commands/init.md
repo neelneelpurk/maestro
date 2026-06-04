@@ -1,5 +1,5 @@
 ---
-description: One-time setup of this repo for the ai-sdlc pipeline (labels, .sdlc/ runtime, PR template, prereqs check).
+description: Set up this repo for the pipeline (labels, .sdlc runtime, PR template, rules, glossary) and create project context (CLAUDE.md / AGENTS.md).
 argument-hint: ""
 ---
 
@@ -9,6 +9,6 @@ Set up this repository for the ai-sdlc pipeline:
 ```
 
 Then:
-- Summarize the output for the user.
-- Remind them to **restart Claude Code (or run `/reload-plugins`)** so the `issue-implementer` agent type and `/sdlc:*` commands load — the agent registry is fixed at session start, so `/sdlc:ship` can only fan out subagents in a session started *after* install.
-- If any aihero front-end skills were reported missing (`to-prd`, `to-issues`, `grill-with-docs`, `triage`, `tdd`), point the user to the README prerequisites / https://www.aihero.dev/skills.
+- **Summarize** the script output.
+- **Create project context.** Have a short grill-with-docs–style discussion with the user (one question at a time): what this project is, how it's built and tested (so the quality gate runs the right command), and the conventions that matter. Write the answers into the freshly-seeded `CLAUDE.md` and `AGENTS.md`. If the aihero `grill-with-docs` skill is available, use it.
+- **Remind** the user to **restart Claude Code (or run `/reload-plugins`)** so the `issue-implementer` agent type and `/sdlc:*` commands load (the agent registry is fixed at session start). Mention any missing aihero skills the script reported.

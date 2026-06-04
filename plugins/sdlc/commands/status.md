@@ -1,11 +1,13 @@
 ---
-description: Show the ai-sdlc board — issues by pipeline stage, open PRs, and drain status.
-argument-hint: ""
+description: Show the pipeline board; or `close-integrated` to close out a merged integration run.
+argument-hint: "[close-integrated]"
 ---
 
-Show the pipeline board:
 ```!
-"${CLAUDE_PLUGIN_ROOT}/scripts/status.sh"
+case "$ARGUMENTS" in
+  close-integrated) "${CLAUDE_PLUGIN_ROOT}/scripts/integration.sh" close-integrated ;;
+  *)                "${CLAUDE_PLUGIN_ROOT}/scripts/status.sh" ;;
+esac
 ```
 
-Then briefly highlight what needs the user's attention — PRs awaiting review (`in-review`), issues that need a human (`hitl`), and anything blocked. Keep it to a few lines.
+If you showed the board, highlight what needs the user: the integration PR or `in-review` PRs awaiting review, `hitl` issues, blocked work, and issues `waiting-for-human-closure` (after merging the integration PR, run `/sdlc:status close-integrated` to close them).

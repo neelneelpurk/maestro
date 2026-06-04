@@ -86,8 +86,29 @@ EOF
 fi
 echo
 
-# 5. aihero front-end skills check -----------------------------------------
-echo "⑤ aihero front-end skills (composed by the pipeline)"
+# 5. Project context, rules & glossary -------------------------------------
+echo "⑤ Project context, rules & glossary"
+tpl="${SDLC_LIB_DIR}/../templates"
+mkdir -p .claude/rules docs
+_seed() { # _seed <template> <dest>
+  if [[ -f "$2" ]]; then echo "   ${2} already exists — left as-is"
+  elif [[ -f "$1" ]]; then cp "$1" "$2"; echo "   wrote ${2}"
+  else sdlc_warn "template missing: $(basename "$1")"; fi
+}
+_seed "${tpl}/sdlc.rules.md" ".claude/rules/sdlc.md"
+_seed "${tpl}/GLOSSARY.md"   "docs/GLOSSARY.md"
+_seed "${tpl}/CLAUDE.md"     "CLAUDE.md"
+_seed "${tpl}/AGENTS.md"     "AGENTS.md"
+if [[ ! -f CONTEXT.md ]]; then
+  printf '# Glossary\n\n<!-- Domain terms, one per heading. Populated by /sdlc:plan-with-agent. -->\n' > CONTEXT.md
+  echo "   wrote CONTEXT.md"
+else
+  echo "   CONTEXT.md already exists — left as-is"
+fi
+echo
+
+# 6. aihero front-end skills check -----------------------------------------
+echo "⑥ aihero front-end skills (composed by the pipeline)"
 missing=()
 for s in to-prd to-issues grill-with-docs triage tdd; do
   if [[ -d "${HOME}/.claude/skills/${s}" ]]; then

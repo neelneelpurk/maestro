@@ -1,69 +1,72 @@
 #!/usr/bin/env bash
-# make-worktree.sh <issue> [slug]
+# make-worktree.sh <issue> [--base <branch>] [--slug <slug>]
 #
 # Creates (or reuses) an isolated git worktree + branch for one issue, based on
-# the latest default branch. Idempotent. Prints the ABSOLUTE worktree path on
-# stdout (and nothing else on stdout) so callers can `cd "$(make-worktree.sh ...)"`.
-# Progress goes to stderr. If <slug> is omitted it is derived from the issue title.
+# <branch> (default: the repo's default branch; drain/auto pass the integration
+# branch). The branch is created with `gh issue develop` so GitHub records a
+# native branch<->issue "Development" link. Idempotent. Prints the ABSOLUTE
+# worktree path on stdout (only that); progress to stderr.
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+sdlc_require_cmd git gh
 
-sdlc_require_cmd git
-
-issue="${1:-}"; slug="${2:-}"
-[[ -n "$issue" ]] || sdlc_die "usage: make-worktree.sh <issue> [slug]"
+issue="${1:-}"; shift || true
+[[ -n "$issue" ]] || sdlc_die "usage: make-worktree.sh <issue> [--base <branch>] [--slug <slug>]"
+base=""; slug=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --base) base="$2"; shift 2 ;;
+    --slug) slug="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+[[ -n "$base" ]] || base="$(sdlc_default_branch)"
 if [[ -z "$slug" ]]; then
-  sdlc_require_cmd gh
   title="$(gh issue view "$issue" --json title --jq .title 2>/dev/null || true)"
-  [[ -n "$title" ]] || sdlc_die "could not fetch issue #$issue to derive a slug; pass <slug> explicitly"
-  slug="$(sdlc_slug "$title")"
-  [[ -n "$slug" ]] || slug="issue"
+  slug="$(sdlc_slug "${title:-issue}")"; [[ -n "$slug" ]] || slug="issue"
 fi
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || sdlc_die "not inside a git repository"
-default="$(sdlc_default_branch)"
 branch="$(sdlc_branch_for "$issue" "$slug")"
 
-# Resolve the worktree base dir to an absolute, normalised path.
 case "$SDLC_WORKTREE_DIR" in
   /*) wt_base="$SDLC_WORKTREE_DIR" ;;
   *)  wt_base="$repo_root/$SDLC_WORKTREE_DIR" ;;
 esac
-mkdir -p "$wt_base"
-wt_base="$(cd "$wt_base" && pwd)"
+mkdir -p "$wt_base"; wt_base="$(cd "$wt_base" && pwd)"
 wt_path="${wt_base}/issue-${issue}-${slug}"
 
-# Already registered? Reuse it.
+# Reuse an existing registered worktree.
 if git -C "$repo_root" worktree list --porcelain | grep -qxF "worktree ${wt_path}"; then
   sdlc_warn "reusing existing worktree: ${wt_path}"
-  printf '%s\n' "$wt_path"
-  exit 0
+  printf '%s\n' "$wt_path"; exit 0
 fi
-
-# A stale directory with no worktree registration — clear it.
 if [[ -e "$wt_path" ]]; then
-  sdlc_warn "removing stale path before re-creating worktree: ${wt_path}"
-  git -C "$repo_root" worktree prune || true
-  rm -rf "$wt_path"
+  sdlc_warn "clearing stale path: ${wt_path}"
+  git -C "$repo_root" worktree prune || true; rm -rf "$wt_path"
 fi
 
-# Pick the freshest start point for the new branch.
-git -C "$repo_root" fetch origin "$default" --quiet 2>/dev/null || true
-if git -C "$repo_root" show-ref --verify --quiet "refs/remotes/origin/${default}"; then
-  start="origin/${default}"
-elif git -C "$repo_root" show-ref --verify --quiet "refs/heads/${default}"; then
-  start="$default"
+git -C "$repo_root" fetch origin "$base" --quiet 2>/dev/null || true
+
+# Create the branch + native issue link if it doesn't exist yet on the remote.
+if ! git -C "$repo_root" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+  sdlc_warn "creating linked branch ${branch} off ${base} (gh issue develop #${issue})"
+  if ! gh issue develop "$issue" --base "$base" --name "$branch" >&2 2>/dev/null; then
+    # Fallback: create the branch directly off the base if gh issue develop fails.
+    sdlc_warn "gh issue develop unavailable; creating ${branch} directly off origin/${base}"
+    git -C "$repo_root" branch "$branch" "origin/${base}" 2>/dev/null \
+      || git -C "$repo_root" branch "$branch" "$base" 2>/dev/null || true
+    git -C "$repo_root" push -u origin "$branch" >&2 2>/dev/null || true
+  fi
+fi
+git -C "$repo_root" fetch origin "$branch" --quiet 2>/dev/null || true
+
+# Build the worktree, forcing the local branch to track the (freshly created) remote branch.
+if git -C "$repo_root" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+  git -C "$repo_root" worktree add -B "$branch" "$wt_path" "origin/${branch}" >&2
 else
-  start="HEAD"
+  git -C "$repo_root" worktree add "$wt_path" -b "$branch" "origin/${base}" >&2
 fi
 
-sdlc_warn "creating worktree ${wt_path} on branch ${branch} (from ${start})"
-if git -C "$repo_root" show-ref --verify --quiet "refs/heads/${branch}"; then
-  # Branch already exists — check it out into the worktree.
-  git -C "$repo_root" worktree add "$wt_path" "$branch" >&2
-else
-  git -C "$repo_root" worktree add "$wt_path" -b "$branch" "$start" >&2
-fi
-
-sdlc_log worktree-created issue="$issue" branch="$branch" path="$wt_path"
+sdlc_log worktree-created issue="$issue" branch="$branch" base="$base" path="$wt_path"
 printf '%s\n' "$wt_path"
