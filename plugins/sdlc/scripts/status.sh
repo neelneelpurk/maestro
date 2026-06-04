@@ -6,7 +6,8 @@ source "${SCRIPT_DIR}/lib.sh"
 sdlc_require_cmd gh jq
 
 repo="$(sdlc_repo)"
-echo "═══ ai-sdlc status — ${repo} ═══"
+version="$(sdlc_version)"
+echo "═══ ai-sdlc status (v${version}) — ${repo} ═══"
 
 list_label() {  # list_label "<label...>" "<heading>"
   local labels="$1" heading="$2" args=() l
