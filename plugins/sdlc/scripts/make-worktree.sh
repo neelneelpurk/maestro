@@ -1,17 +1,24 @@
 #!/usr/bin/env bash
-# make-worktree.sh <issue> <slug>
+# make-worktree.sh <issue> [slug]
 #
 # Creates (or reuses) an isolated git worktree + branch for one issue, based on
 # the latest default branch. Idempotent. Prints the ABSOLUTE worktree path on
 # stdout (and nothing else on stdout) so callers can `cd "$(make-worktree.sh ...)"`.
-# Progress goes to stderr.
+# Progress goes to stderr. If <slug> is omitted it is derived from the issue title.
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 sdlc_require_cmd git
 
 issue="${1:-}"; slug="${2:-}"
-[[ -n "$issue" && -n "$slug" ]] || sdlc_die "usage: make-worktree.sh <issue> <slug>"
+[[ -n "$issue" ]] || sdlc_die "usage: make-worktree.sh <issue> [slug]"
+if [[ -z "$slug" ]]; then
+  sdlc_require_cmd gh
+  title="$(gh issue view "$issue" --json title --jq .title 2>/dev/null || true)"
+  [[ -n "$title" ]] || sdlc_die "could not fetch issue #$issue to derive a slug; pass <slug> explicitly"
+  slug="$(sdlc_slug "$title")"
+  [[ -n "$slug" ]] || slug="issue"
+fi
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || sdlc_die "not inside a git repository"
 default="$(sdlc_default_branch)"
