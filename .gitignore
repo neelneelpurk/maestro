@@ -1,0 +1,19 @@
+# --- AI SDLC runtime state (created in the *target* repo by /sdlc:init) ---
+# Loop / session state files (ralph-style drain loop, etc.)
+*.local.md
+# Per-run logs and the rolling event log
+.sdlc/log.jsonl
+.sdlc/runs/
+
+# --- Parallel per-issue worktrees ---
+# make-worktree.sh creates these as a sibling dir (../ai-sdlc-worktrees) by
+# default, but ignore any in-tree copies just in case.
+ai-sdlc-worktrees/
+.sdlc-worktrees/
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
