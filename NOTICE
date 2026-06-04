@@ -1,0 +1,18 @@
+ai-sdlc
+Copyright (c) 2026 Soumyadeep Purkait
+
+This project's front-half workflow is inspired by and composes the
+aihero.dev engineering skills by Matt Pocock (https://www.aihero.dev/skills):
+  - to-prd          (conversation → PRD)
+  - to-issues       (PRD → tracer-bullet vertical-slice issues)
+  - grill-with-docs (domain alignment; wrapped here as the `align-agents` skill)
+  - triage          (issue state machine)
+  - tdd             (red-green-refactor implementation)
+
+Those skills are not redistributed here. The ai-sdlc plugin composes them when
+they are installed, and adds the autonomous multi-agent orchestration layer
+(parallel per-issue fan-out, the drain loop, and the quality-gate / disclaimer
+hooks). Install the aihero skills from https://www.aihero.dev/skills.
+
+The drain loop's Stop-hook mechanism is adapted from the official
+"ralph-loop" plugin in Anthropic's claude-plugins marketplace.
