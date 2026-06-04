@@ -51,18 +51,18 @@ Do **all** work inside `$WT`. The worktree also contains `.sdlc/scripts/`, so ke
 ### 5. Implement test-first
 Use the **`tdd`** skill (red → green → refactor) to satisfy the acceptance criteria. Test external behavior, not implementation details. Keep it a thin vertical slice — exactly what the issue asks, nothing more. Honor the issue's "Out of scope".
 
-### 6. Quality gate — must be green
+### 6. Quality gate
+The gate is enforced for you: `open-pr.sh` (step 7) runs `quality-gate.sh` and refuses to open a PR if it fails. For fast feedback you can run it yourself first and fix any failures before attempting the PR:
 ```
 bash "$S/quality-gate.sh"
 ```
-Must exit 0. If it fails, fix and re-run until green. **Never open a PR on a red gate.**
 
 ### 7. Commit and open the PR
 Commit with a message that references the issue, then:
 ```
 bash "$S/open-pr.sh" <n> --body-file <short-summary.md>
 ```
-`open-pr.sh` opens the PR (`Closes #<n>`, AI disclaimer, acceptance criteria), relabels the issue to `in-review`, and comments the PR link. The optional `--body-file` should briefly map what you did to each acceptance criterion.
+`open-pr.sh` runs the quality gate (red gate ⇒ no PR), opens the PR (`Closes #<n>`, AI disclaimer, acceptance criteria), relabels the issue to `in-review`, and comments the PR link. The optional `--body-file` should briefly map what you did to each acceptance criterion. If it reports the gate failed, fix the failures and run it again.
 
 ### 8. Stop
 Report the issue number, the PR URL, and a one-line summary. **Do not merge. Do not pick up another issue.** You are done.

@@ -14,22 +14,32 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 sdlc_require_cmd gh git jq
 
-issue=""; title=""; body_file=""; draft=0; link=1
+issue=""; title=""; body_file=""; draft=0; link=1; no_gate=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --title)     title="$2"; shift 2 ;;
     --body-file) body_file="$2"; shift 2 ;;
     --draft)     draft=1; shift ;;
     --no-link)   link=0; shift ;;
+    --no-gate)   no_gate=1; shift ;;
     -*)          sdlc_die "unknown flag: $1" ;;
     *)           issue="$1"; shift ;;
   esac
 done
-[[ -n "$issue" ]] || sdlc_die "usage: open-pr.sh <issue> [--title t] [--body-file f] [--draft] [--no-link]"
+[[ -n "$issue" ]] || sdlc_die "usage: open-pr.sh <issue> [--title t] [--body-file f] [--draft] [--no-link] [--no-gate]"
 
 branch="$(git rev-parse --abbrev-ref HEAD)"
 default="$(sdlc_default_branch)"
 [[ "$branch" != "$default" ]] || sdlc_die "refusing to open a PR from the default branch ($default) — work in an issue worktree"
+
+# Quality gate is the authoritative guarantee that the pipeline never opens a
+# red PR. Runs in the current dir (the worktree). Override with --no-gate or
+# SDLC_SKIP_GATE=1 only when you really mean it.
+if [[ $no_gate -eq 0 && "${SDLC_SKIP_GATE:-0}" != "1" ]]; then
+  if ! bash "${SDLC_LIB_DIR}/quality-gate.sh"; then
+    sdlc_die "quality gate failed — not opening a PR for #${issue}. Fix the failures and retry (or pass --no-gate to override)."
+  fi
+fi
 
 # Issue title/body for the PR title + acceptance criteria.
 issue_json="$(gh issue view "$issue" --json title,body 2>/dev/null || echo '{}')"
