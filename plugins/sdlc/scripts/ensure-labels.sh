@@ -9,7 +9,7 @@ repo="$(sdlc_repo)"
 
 # name | hex color | description   (see docs/GLOSSARY.md for the state machine)
 labels=(
-  # Triage state (aihero roles)
+  # Triage state
   "${SDLC_LABEL_NEEDS_TRIAGE}|fbca04|Maintainer needs to evaluate this issue"
   "${SDLC_LABEL_NEEDS_INFO}|d93f0b|Waiting on the reporter for more information"
   "${SDLC_LABEL_READY_AGENT}|0e8a16|Human-approved for autonomous implementation"

@@ -1,19 +1,21 @@
 # ai-sdlc architecture (v3)
 
-`ai-sdlc` is a Claude Code **plugin** (`sdlc`) distributed from a single-repo **marketplace** (`ai-sdlc`). It builds on the [aihero.dev](https://www.aihero.dev/skills) engineering skills and adds an autonomous, GitHub-native orchestration layer with a coordinator + background-worker model.
+`ai-sdlc` is a Claude Code **plugin** (`sdlc`) distributed from a single-repo **marketplace** (`ai-sdlc`). It is **self-contained** (no external skill dependencies) — an autonomous, GitHub-native SDLC with a coordinator + background-worker model.
 
 ## Pipeline
 
 ```
 /sdlc:init            set up the repo + write CLAUDE.md / AGENTS.md / rules / glossary
-/sdlc:plan-with-agent grill the domain model → publish a PRD (parent issue)        [composes grill-with-docs + to-prd]
-/sdlc:issues          PRD → native sub-issues + dependencies, ready-for-agent       [composes to-issues]
+/sdlc:plan-with-agent grill the domain model → publish a PRD (parent issue)
+/sdlc:issues          PRD → native sub-issues + dependencies, ready-for-agent
 /sdlc:ship <issue>    one issue → PR to the default branch → in-review (supervised)
 /sdlc:drain           all ready issues → integration branch (dependency-ordered, per-issue PRs auto-merged)
 /sdlc:auto            loop: roadmap (auto-labelled) → drain, until caught up
 /sdlc:roadmap         analyze what's shipped → next features + tech-debt → issues
-/sdlc:code-feedback   review a PR or the whole codebase (GitHub PR reviews)         [composes code-review]
-/sdlc:code-architecture-map  module/seam/dependency map                            [composes improve-codebase-architecture]
+/sdlc:code-feedback   review a PR or the whole codebase (GitHub PR reviews)
+/sdlc:code-architecture-map  module/seam/dependency map
+/sdlc:review          review any PR (multi-dimension) → post a GitHub review
+/sdlc:learn           persist a correction as a durable, inherited learning
 /sdlc:status          board / close out a merged integration run
 ```
 

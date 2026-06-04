@@ -1,7 +1,7 @@
 {
   "name": "sdlc",
   "version": "0.1.0",
-  "description": "Autonomous, multi-agent AI SDLC: PRD → aligned domain docs → vertical-slice GitHub issues → parallel subagents that each open a PR. Composes the aihero.dev engineering skills and adds the orchestration/AFK layer (fan-out, drain loop, quality-gate hooks).",
+  "description": "Autonomous, multi-agent AI SDLC: plan a PRD, break it into native GitHub sub-issues, and fan out background workers that implement test-first and land each issue on an integration branch behind one human review gate. Self-contained: skills, hooks, scripts, subagents, loops.",
   "author": {
     "name": "Soumyadeep Purkait",
     "email": "hello@soumyadeeppurkait.xyz"

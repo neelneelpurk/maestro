@@ -10,7 +10,7 @@
     {
       "name": "sdlc",
       "source": "./plugins/sdlc",
-      "description": "Autonomous, multi-agent AI SDLC. Composes the aihero.dev engineering skills (to-prd, to-issues, grill-with-docs, triage, tdd) and adds the orchestration/AFK layer: fan out one subagent per ready GitHub issue, each in its own git worktree, each opening a PR — plus a drain loop, a cron schedule, and quality-gate hooks.",
+      "description": "Autonomous, multi-agent AI SDLC for any GitHub repo: plan a PRD, break it into native sub-issues, and fan out background workers that implement test-first and land each issue on an integration branch with one human review gate. Skills, hooks, scripts, subagents, and loops.",
       "category": "development",
       "homepage": "https://github.com/neelneelpurk/ai-sdlc"
     }

@@ -1,17 +1,22 @@
 ---
 name: code-architecture-map
-description: Map the codebase architecture — modules, seams, and dependencies — as docs/architecture-map.md plus an optional HTML report. Composes the improve-codebase-architecture skill and parallel Explore agents. Use for /sdlc:code-architecture-map.
+description: Map the codebase architecture — modules, seams, and dependencies — to docs/architecture-map.md plus an optional HTML report. Use for /sdlc:code-architecture-map.
 ---
 
 # Code architecture map
 
-Produce a navigable map of the codebase's structure — useful on its own and as input to `/sdlc:roadmap` and `/sdlc:code-feedback`.
+Produce a navigable map of the codebase's structure — useful on its own and as input to `/sdlc:roadmap` and `/sdlc:review`.
+
+## Vocabulary (use consistently)
+- **Module** — anything with an interface and an implementation (function, class, package).
+- **Interface** — everything a caller must know to use it: types, invariants, error modes, ordering, config.
+- **Seam** — where an interface lives; a place behaviour can be changed without editing in place.
+- **Depth** — a lot of behaviour behind a small interface (deep = high leverage; shallow = interface nearly as complex as the implementation).
+- **Deletion test** — if you imagine deleting a module and the complexity vanishes, it was a pass-through; if it reappears across callers, it was earning its keep.
 
 ## Steps
-1. If the aihero **`improve-codebase-architecture`** skill is available, use it — it surveys modules, interfaces/seams, and depth, and writes a rich HTML report using `CONTEXT.md` vocabulary. 
-2. Otherwise, fan out `Explore` subagents across the codebase to identify, per subsystem: its **modules** (interface + implementation), the **seams** where behaviour can be altered, and the key **dependencies** between them.
-3. Synthesize:
-   - **`docs/architecture-map.md`** — a concise map: each module's responsibility, its seam, notable dependencies, and a Mermaid diagram of the module graph.
-   - Optionally a self-contained HTML report written to the temp dir and opened for the user.
-4. Use `CONTEXT.md` domain vocabulary and respect `docs/adr/`. Flag friction and tech-debt hotspots (these feed `/sdlc:roadmap`).
-5. Report where the map was written.
+1. Fan out **`Explore`** subagents across the codebase (one per subsystem/top-level area). Each identifies, for its area: the modules and their interfaces/seams, the key dependencies in and out, and where it feels shallow or tightly coupled.
+2. Synthesize **`docs/architecture-map.md`**: per module — responsibility, its seam, notable dependencies; plus a Mermaid diagram of the module graph and a short "friction & tech-debt hotspots" section (apply the deletion test).
+3. Optionally also write a self-contained HTML report (Tailwind + Mermaid via CDN) to the OS temp dir and open it; tell the user the path.
+4. Use `CONTEXT.md` domain vocabulary and respect `docs/adr/`.
+5. Report where the map was written. Flag hotspots so they can feed `/sdlc:roadmap`.

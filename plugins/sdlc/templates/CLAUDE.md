@@ -1,7 +1,7 @@
 # Project context
 
 <!--
-  Filled in by `/sdlc:init` from a short grill-with-docs discussion:
+  Filled in by `/sdlc:init` from a short planning discussion:
   what this project is, how it is structured, how to build and test it,
   and the conventions that matter. Keep it tight and high-signal.
 -->
@@ -19,4 +19,5 @@
 @AGENTS.md
 @CONTEXT.md
 @.claude/rules/sdlc.md
+@.claude/rules/learnings.md
 @docs/GLOSSARY.md

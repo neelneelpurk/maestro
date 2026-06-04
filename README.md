@@ -4,7 +4,7 @@
 >
 > Plan a PRD with the agent → break it into native sub-issues → fan out **background workers, one per issue** → land them on an **integration branch** with a single human review gate. Built from skills, hooks, scripts, subagents, and loops, on top of GitHub's native issue/PR features.
 
-This repo is a Claude Code **marketplace** (`ai-sdlc`) shipping one **plugin** (`sdlc`). The plugin builds on the [aihero.dev](https://www.aihero.dev/skills) engineering skills (`to-prd`, `to-issues`, `grill-with-docs`, `tdd`, `improve-codebase-architecture`) and adds the autonomous orchestration layer they leave out.
+This repo is a Claude Code **marketplace** (`ai-sdlc`) shipping one **plugin** (`sdlc`). It's **self-contained** — it brings the whole workflow (planning, breakdown, strictly test-first implementation, review) plus the autonomous multi-agent orchestration layer, with no external skill dependencies.
 
 ## Commands
 
@@ -37,7 +37,7 @@ claude plugin install sdlc@ai-sdlc
 
 ### Prerequisites
 - [`gh`](https://cli.github.com/) authenticated with `repo` scope, and `jq`.
-- The aihero.dev skills (`to-prd`, `to-issues`, `grill-with-docs`, `tdd`, `improve-codebase-architecture`). `/sdlc:init` checks and reports any that are missing.
+- That's all — the plugin is self-contained (no external skill dependencies).
 
 ## The integration-branch model (drain & auto)
 
@@ -68,5 +68,5 @@ See [docs/GLOSSARY.md](docs/GLOSSARY.md) for the full label state machine and [d
 - **No auto-close** — issues move to `waiting-for-human-closure`; you close them when you merge the integration PR.
 - **Isolation** — one git worktree + branch per issue; concurrency capped by `SDLC_MAX_PARALLEL`.
 
-## Credits
-The front half of the workflow **builds on and composes** Matt Pocock's [aihero.dev engineering skills](https://www.aihero.dev/skills); the drain loop's mechanism is adapted from Anthropic's `ralph-loop`. See [NOTICE](NOTICE). MIT — see [LICENSE](LICENSE).
+## License
+MIT — see [LICENSE](LICENSE). Self-contained: no external skill dependencies.

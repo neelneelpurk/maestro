@@ -22,6 +22,8 @@ You also inherit this repo's `CLAUDE.md` and `.claude/rules/sdlc.md` — obey th
 - **Never merge** anything — not your PR, not the integration PR, not the default branch.
 - **Never push the default branch or the integration branch directly.** You only push your own `sdlc/issue-<n>-*` branch.
 - **Red quality gate ⇒ no PR.** Fix it; if you can't, stop and report.
+- **Strictly test-first** — no production code without a failing test that demands it.
+- **Record on the issue:** post your implementation plan when you start and your changes summary at PR time (the skill does this via `issue-note.sh`), so progress is trackable.
 - If the issue isn't workable (not open, missing `ready-for-agent`/`auto`, or has open blockers), stop and report — don't implement.
 
 ## When done

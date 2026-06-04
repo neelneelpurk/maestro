@@ -2,8 +2,8 @@
 # init.sh — one-time (idempotent) setup of a target repo for the ai-sdlc pipeline.
 #
 # Creates the triage + pipeline labels, installs the scripts and generated config
-# under .sdlc/ (machine-local), ensures .gitignore + a PR template, and checks
-# that the aihero front-end skills are available. Safe to re-run.
+# under .sdlc/ (machine-local), ensures .gitignore + a PR template, and seeds the
+# project context files (CLAUDE.md, AGENTS.md, rules, glossary). Safe to re-run.
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
@@ -96,6 +96,7 @@ _seed() { # _seed <template> <dest>
   else sdlc_warn "template missing: $(basename "$1")"; fi
 }
 _seed "${tpl}/sdlc.rules.md" ".claude/rules/sdlc.md"
+_seed "${tpl}/learnings.md"  ".claude/rules/learnings.md"
 _seed "${tpl}/GLOSSARY.md"   "docs/GLOSSARY.md"
 _seed "${tpl}/CLAUDE.md"     "CLAUDE.md"
 _seed "${tpl}/AGENTS.md"     "AGENTS.md"
@@ -107,27 +108,11 @@ else
 fi
 echo
 
-# 6. aihero front-end skills check -----------------------------------------
-echo "⑥ aihero front-end skills (composed by the pipeline)"
-missing=()
-for s in to-prd to-issues grill-with-docs triage tdd; do
-  if [[ -d "${HOME}/.claude/skills/${s}" ]]; then
-    echo "   ✔ ${s}"
-  else
-    echo "   ✘ ${s} (not found in ~/.claude/skills)"
-    missing+=("$s")
-  fi
-done
-echo
-
-sdlc_log init repo="$repo" missing_skills="${missing[*]:-none}"
+sdlc_log init repo="$repo"
 
 echo "✅ ai-sdlc init complete for ${repo}."
 echo
 echo "Next:"
 echo "  • Restart Claude Code (or /reload-plugins) so the issue-implementer agent + /sdlc:* commands load."
-if [[ ${#missing[@]} -gt 0 ]]; then
-  echo "  • Install the missing aihero skills (${missing[*]}) from https://www.aihero.dev/skills,"
-  echo "    or run /setup-matt-pocock-skills, so /sdlc:prd, /sdlc:align and /sdlc:issues work."
-fi
-echo "  • Then: /sdlc:prd → /sdlc:align → /sdlc:issues → /sdlc:ship (or /sdlc:drain)."
+echo "  • Then: /sdlc:plan-with-agent → /sdlc:issues → /sdlc:ship <issue> (or /sdlc:drain)."
+echo "  • Autonomous: /sdlc:auto. Review a PR: /sdlc:review. Teach a correction: /sdlc:learn."
