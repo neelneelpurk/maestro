@@ -1,9 +1,10 @@
 # --- AI SDLC runtime state (created in the *target* repo by /sdlc:init) ---
-# Loop / session state files (ralph-style drain loop, etc.)
+# The whole .sdlc/ directory is machine-local: it holds the installed copy of
+# the scripts (referenced by absolute path), generated config.sh, loop state,
+# and logs. Nothing in here is meant to be committed.
+.sdlc/
+# Loop / session state files, wherever they land.
 *.local.md
-# Per-run logs and the rolling event log
-.sdlc/log.jsonl
-.sdlc/runs/
 
 # --- Parallel per-issue worktrees ---
 # make-worktree.sh creates these as a sibling dir (../ai-sdlc-worktrees) by

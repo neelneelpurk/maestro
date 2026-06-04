@@ -16,15 +16,26 @@
 # Configuration (override via environment or .sdlc/config.sh in the target repo)
 # ---------------------------------------------------------------------------
 
+# Absolute path to this scripts dir, resolved independently of the current
+# working directory. Critical because scripts are invoked from inside per-issue
+# worktrees (a different cwd than where the scripts live).
+SDLC_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Where per-repo state lives (logs, loop state, config).
 : "${SDLC_DIR:=.sdlc}"
 
 # Load per-repo overrides if present. config.sh may set any SDLC_* variable or
-# any of the label names below. Written by `/sdlc:init`.
-if [[ -f "${SDLC_DIR}/config.sh" ]]; then
-  # shellcheck disable=SC1090
-  source "${SDLC_DIR}/config.sh"
-fi
+# any of the label names below. Written by `/sdlc:init`. Prefer a config.sh
+# sitting next to the scripts (…/.sdlc/config.sh once installed) so it resolves
+# correctly even when cwd is a worktree; fall back to a cwd-relative one.
+for _sdlc_cfg in "${SDLC_LIB_DIR}/../config.sh" "${SDLC_DIR}/config.sh"; do
+  if [[ -f "$_sdlc_cfg" ]]; then
+    # shellcheck disable=SC1090
+    source "$_sdlc_cfg"
+    break
+  fi
+done
+unset _sdlc_cfg
 
 # Triage label vocabulary (canonical aihero roles). Override in config.sh if the
 # repo already uses different strings.
