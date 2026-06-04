@@ -1,102 +1,81 @@
 #!/usr/bin/env bash
-# open-pr.sh <issue> [--title <t>] [--body-file <path>] [--draft] [--no-link]
+# open-pr.sh <issue> [--base <branch>] [--body-file f] [--draft] [--no-gate]
 #
-# Run this from inside the issue's worktree. It:
-#   1. pushes the current branch to origin
-#   2. opens a PR (or reuses an existing one for the branch) whose body has
-#      the AI disclaimer, `Closes #<issue>`, the issue's acceptance criteria,
-#      and a commit summary
-#   3. unless --no-link: relabels the issue ready-for-agent/in-progress -> in-review
-#      and comments the PR link on the issue
-# Prints the PR URL on stdout.
+# Run from inside the issue's worktree. Runs the quality gate (the authoritative
+# guard — red gate => no PR), pushes the branch, and opens ONE PR for the issue:
+#
+#   --base = default branch (ship, supervised):  PR with `Closes #<n>` -> default
+#       branch; relabel the issue `in-review`; await human review.
+#   --base = an integration branch (drain/auto):  PR (no `Closes`) -> integration
+#       branch, then hand off to integration.sh, which merges it and relabels the
+#       issue `waiting-for-human-closure` (the issue is NOT auto-closed).
+#
+# Prints the per-issue PR URL on stdout.
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
-
 sdlc_require_cmd gh git jq
 
-issue=""; title=""; body_file=""; draft=0; link=1; no_gate=0
+issue=""; base=""; body_file=""; draft=0; no_gate=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --title)     title="$2"; shift 2 ;;
+    --base)      base="$2"; shift 2 ;;
     --body-file) body_file="$2"; shift 2 ;;
     --draft)     draft=1; shift ;;
-    --no-link)   link=0; shift ;;
     --no-gate)   no_gate=1; shift ;;
     -*)          sdlc_die "unknown flag: $1" ;;
     *)           issue="$1"; shift ;;
   esac
 done
-[[ -n "$issue" ]] || sdlc_die "usage: open-pr.sh <issue> [--title t] [--body-file f] [--draft] [--no-link] [--no-gate]"
+[[ -n "$issue" ]] || sdlc_die "usage: open-pr.sh <issue> [--base <branch>] [--body-file f] [--draft] [--no-gate]"
 
 branch="$(git rev-parse --abbrev-ref HEAD)"
 default="$(sdlc_default_branch)"
-[[ "$branch" != "$default" ]] || sdlc_die "refusing to open a PR from the default branch ($default) — work in an issue worktree"
+[[ -n "$base" ]] || base="$default"
+[[ "$branch" != "$default" && "$branch" != "$base" ]] || sdlc_die "refusing to open a PR from '$branch' — work on an issue branch in a worktree"
 
-# Quality gate is the authoritative guarantee that the pipeline never opens a
-# red PR. Runs in the current dir (the worktree). Override with --no-gate or
-# SDLC_SKIP_GATE=1 only when you really mean it.
+# Quality gate — the authoritative no-red-PR guard. Runs in the worktree.
 if [[ $no_gate -eq 0 && "${SDLC_SKIP_GATE:-0}" != "1" ]]; then
-  if ! bash "${SDLC_LIB_DIR}/quality-gate.sh"; then
-    sdlc_die "quality gate failed — not opening a PR for #${issue}. Fix the failures and retry (or pass --no-gate to override)."
-  fi
+  bash "${SDLC_LIB_DIR}/quality-gate.sh" || sdlc_die "quality gate failed — not opening a PR for #${issue} (fix and retry, or --no-gate to override)."
 fi
 
-# Issue title/body for the PR title + acceptance criteria.
-issue_json="$(gh issue view "$issue" --json title,body 2>/dev/null || echo '{}')"
-issue_title="$(jq -r '.title // ""' <<<"$issue_json")"
-issue_body="$(jq -r '.body // ""' <<<"$issue_json")"
-[[ -n "$title" ]] || title="$issue_title"
-[[ -n "$title" ]] || title="Implement issue #${issue}"
-
-ac="$(printf '%s\n' "$issue_body" | awk '
-  /^##.*[Aa]cceptance/ {f=1; next}
-  f && /^##/ {f=0}
-  f {print}
-' | grep -E '^[[:space:]]*- \[[ xX]\]' || true)"
-
-# Push the branch.
 git push -u origin "$branch" >&2
 
-# Reuse an existing PR for this branch if present.
-existing="$(gh pr list --head "$branch" --state open --json url --jq '.[0].url // empty' 2>/dev/null || true)"
-if [[ -n "$existing" ]]; then
-  sdlc_warn "a PR already exists for ${branch}; reusing it"
-  url="$existing"
-else
-  # Build the body.
-  tmp_body="$(mktemp)"; trap 'rm -f "$tmp_body"' EXIT
+# Reuse an existing open PR for this branch.
+url="$(gh pr list --head "$branch" --state open --json url --jq '.[0].url // empty' 2>/dev/null || true)"
+if [[ -z "$url" ]]; then
+  issue_json="$(gh issue view "$issue" --json title,body 2>/dev/null || echo '{}')"
+  title="$(jq -r '.title // ""' <<<"$issue_json")"; [[ -n "$title" ]] || title="Implement issue #${issue}"
+  ac="$(jq -r '.body // ""' <<<"$issue_json" | awk '
+    /^##.*[Aa]cceptance/ {f=1; next} f && /^##/ {f=0} f {print}' | grep -E '^[[:space:]]*- \[[ xX]\]' || true)"
+  tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
   {
-    sdlc_disclaimer
+    sdlc_disclaimer; echo
+    if [[ "$base" == "$default" ]]; then echo "Closes #${issue}"; else echo "Part of #${issue} (merges into the integration branch \`${base}\`; the issue stays open until the integration PR merges)."; fi
     echo
-    echo "Closes #${issue}"
-    echo
-    if [[ -n "$body_file" && -f "$body_file" ]]; then
-      echo "## Summary"; echo
-      cat "$body_file"; echo
-    fi
+    [[ -n "$body_file" && -f "$body_file" ]] && { echo "## Summary"; echo; cat "$body_file"; echo; }
     echo "## Commits"; echo
-    git log --oneline "origin/${default}..HEAD" 2>/dev/null | sed 's/^/- /' || true
+    git log --oneline "origin/${base}..HEAD" 2>/dev/null | sed 's/^/- /' || true
     echo
-    if [[ -n "$ac" ]]; then
-      echo "## Acceptance criteria (from #${issue})"; echo
-      printf '%s\n' "$ac"
-    fi
-  } >"$tmp_body"
-
-  args=(--title "$title" --body-file "$tmp_body" --head "$branch" --base "$default")
+    [[ -n "$ac" ]] && { echo "## Acceptance criteria (from #${issue})"; echo; printf '%s\n' "$ac"; }
+  } >"$tmp"
+  args=(--title "$title" --body-file "$tmp" --head "$branch" --base "$base")
   [[ $draft -eq 1 ]] && args+=(--draft)
   url="$(gh pr create "${args[@]}" 2>&1 | grep -oE 'https://github.com/[^ ]+/pull/[0-9]+' | head -1 || true)"
-  [[ -n "$url" ]] || sdlc_die "gh pr create did not return a PR URL (check output above)"
+  [[ -n "$url" ]] || sdlc_die "gh pr create did not return a PR URL"
 fi
+num="${url##*/}"
 
-if [[ $link -eq 1 ]]; then
-  gh issue edit "$issue" \
-    --add-label "$SDLC_LABEL_IN_REVIEW" \
-    --remove-label "$SDLC_LABEL_READY_AGENT" \
-    --remove-label "$SDLC_LABEL_IN_PROGRESS" >/dev/null 2>&1 || sdlc_warn "could not relabel issue #${issue}"
+if [[ "$base" == "$default" ]]; then
+  # Ship (supervised): await human review.
+  gh issue edit "$issue" --add-label "$SDLC_LABEL_IN_REVIEW" \
+    --remove-label "$SDLC_LABEL_READY_AGENT" --remove-label "$SDLC_LABEL_IN_PROGRESS" \
+    --remove-label "$SDLC_LABEL_AUTO" >/dev/null 2>&1 || true
   gh issue comment "$issue" --body "$(sdlc_disclaimer)
-Opened PR for this issue: ${url}" >/dev/null 2>&1 || sdlc_warn "could not comment on issue #${issue}"
+Opened PR for review: ${url}" >/dev/null 2>&1 || true
+else
+  # Integration (drain/auto): merge into the integration branch + relabel.
+  bash "${SDLC_LIB_DIR}/integration.sh" integrate "$issue" "$num" >&2
 fi
 
-sdlc_log pr-opened issue="$issue" branch="$branch" url="$url"
+sdlc_log pr-opened issue="$issue" branch="$branch" base="$base" url="$url"
 printf '%s\n' "$url"

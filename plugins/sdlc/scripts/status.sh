@@ -37,9 +37,10 @@ jq -r '.[] | "\(.number)\t\(.title)"' <<<"$afk_all" | while IFS=$'\t' read -r nu
   [[ -n "${blockers// /}" ]] && echo "   #${num}  ${title}  ⟵ blocked by: ${blockers}"
 done
 
-list_label "$SDLC_LABEL_IN_PROGRESS" "In progress (an agent is working)"
-list_label "$SDLC_LABEL_IN_REVIEW" "In review (PR open, awaiting human)"
-list_label "$SDLC_LABEL_READY_AGENT $SDLC_LABEL_HITL" "Needs a human (hitl)"
+list_label "$SDLC_LABEL_IN_PROGRESS" "In progress (a worker is implementing)"
+list_label "$SDLC_LABEL_IN_REVIEW" "In review (ship: PR to default branch, awaiting you)"
+list_label "$SDLC_LABEL_WAITING_CLOSURE" "Integrated, waiting for human closure (drain/auto)"
+list_label "$SDLC_LABEL_HITL" "Needs a human (hitl)"
 
 # Open PRs.
 echo
@@ -47,7 +48,7 @@ prs="$(gh pr list --state open --limit 200 --json number,title,headRefName 2>/de
 echo "■ Open PRs ($(jq 'length' <<<"$prs"))"
 jq -r '.[] | "   #\(.number)  \(.title)  [\(.headRefName)]"' <<<"$prs"
 
-# Drain loop.
+# Integration run.
 echo
-printf '■ Drain loop: '
-bash "${SCRIPT_DIR}/drain-control.sh" status 2>/dev/null || echo "unknown"
+printf '■ '
+bash "${SCRIPT_DIR}/integration.sh" status 2>/dev/null || echo "no active integration run."

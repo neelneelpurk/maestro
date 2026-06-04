@@ -1,40 +1,42 @@
 #!/usr/bin/env bash
-# ready-issues.sh [--count|--numbers|--json]
+# ready-issues.sh [--json|--numbers|--count] [--anyone]
 #
-# Prints the issues that can be worked autonomously RIGHT NOW: open, labelled
-# ready-for-agent AND afk, NOT already in-progress/in-review, NOT a prd parent,
-# and with no still-open blockers (per blocked-by.sh).
+# The single source of truth for "what the drain queue can work right now":
+# issues that are open, assigned to me (SDLC_ASSIGNEE, default @me), labelled
+# ready-for-agent OR auto, NOT already in-progress / in-review /
+# waiting-for-human-closure / hitl, NOT a prd or roadmap parent, and with no
+# still-open blockers (native dependencies, per blocked-by.sh).
 #
 #   --json     (default) JSON array of {number, title, slug, labels}
 #   --numbers  issue numbers, one per line
-#   --count    just the integer count
-#
-# This is the single source of truth for "what the fan-out should pick up".
+#   --count    integer count
+#   --anyone   ignore the assignee filter (any assignee)
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib.sh"
-
 sdlc_require_cmd gh jq
-out="${1:---json}"
 
-# AND-ed labels: ready-for-agent AND afk, open only.
-candidates="$(gh issue list \
-  --label "$SDLC_LABEL_READY_AGENT" \
-  --label "$SDLC_LABEL_AFK" \
-  --state open --limit 300 \
-  --json number,title,labels 2>/dev/null || echo '[]')"
+out="--json"; assignee_args=(--assignee "$SDLC_ASSIGNEE")
+for a in "$@"; do
+  case "$a" in
+    --anyone) assignee_args=() ;;
+    --count|--numbers|--json) out="$a" ;;
+  esac
+done
 
-# Drop anything already being worked / done / a parent epic.
+q() { gh issue list "${assignee_args[@]}" --label "$1" --state open --limit 300 --json number,title,labels 2>/dev/null || echo '[]'; }
+
+# ready-for-agent OR auto, merged + de-duplicated by number.
+merged="$(jq -s 'add | unique_by(.number)' <(q "$SDLC_LABEL_READY_AGENT") <(q "$SDLC_LABEL_AUTO"))"
+
+# Drop in-flight / closure / hitl / parent states.
 filtered="$(jq -c \
-  --arg ip "$SDLC_LABEL_IN_PROGRESS" \
-  --arg ir "$SDLC_LABEL_IN_REVIEW" \
-  --arg prd "$SDLC_LABEL_PRD" '
-  map(select(
-    (.labels | map(.name)) as $l
-    | ($l | index($ip) | not)
-      and ($l | index($ir) | not)
-      and ($l | index($prd) | not)
-  ))' <<<"$candidates")"
+  --arg ip "$SDLC_LABEL_IN_PROGRESS" --arg ir "$SDLC_LABEL_IN_REVIEW" \
+  --arg wc "$SDLC_LABEL_WAITING_CLOSURE" --arg hitl "$SDLC_LABEL_HITL" \
+  --arg prd "$SDLC_LABEL_PRD" --arg roadmap "$SDLC_LABEL_ROADMAP" '
+  map(select((.labels|map(.name)) as $l
+    | ($l|index($ip)|not) and ($l|index($ir)|not) and ($l|index($wc)|not)
+      and ($l|index($hitl)|not) and ($l|index($prd)|not) and ($l|index($roadmap)|not)))' <<<"$merged")"
 
 # Keep only unblocked issues; attach a branch slug.
 ready="$(

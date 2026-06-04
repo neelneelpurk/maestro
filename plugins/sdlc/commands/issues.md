@@ -1,16 +1,12 @@
 ---
-description: Break a PRD issue into ready-for-agent vertical-slice issues the pipeline can implement.
+description: Break a PRD into ready-for-agent sub-issues with native dependencies, assigned to you.
 argument-hint: "<prd-issue#>"
 ---
 
-Use the **to-issues** skill (aihero) to break the PRD (issue `$ARGUMENTS`) into tracer-bullet vertical slices and publish each as a GitHub issue, recording dependencies in a `## Blocked by` section as `#<n>` references.
+Use the **to-issues** skill (aihero) to break PRD #`$ARGUMENTS` into tracer-bullet vertical slices, using the aligned `CONTEXT.md`/ADR vocabulary. Then make each slice native to the pipeline (scripts live in `.sdlc/scripts/`):
 
-Then make each new slice legible to the pipeline by applying the right pipeline labels (to-issues marks slices HITL/AFK in prose — the pipeline needs the *labels*):
-- AFK slices (no human needed): `gh issue edit <n> --add-label ready-for-agent --add-label afk`
-- HITL slices (need a human): `gh issue edit <n> --add-label ready-for-agent --add-label hitl`
+- create it **assigned to `@me`**, labelled **`ready-for-agent`** (add `hitl` instead if it needs a human; add `enhancement`/`bug` as apt);
+- link it as a sub-issue of the PRD: `.sdlc/scripts/subissue.sh add <prd> <child>`;
+- set dependencies between slices: `.sdlc/scripts/dependency.sh add <issue> <blocker>`.
 
-Reference the aligned `CONTEXT.md`/ADRs (from `/sdlc:align`) so slice titles and descriptions use the canonical domain vocabulary.
-
-If `to-issues` is not available, install the aihero skills (README) or create the slices manually using its structure (Parent, What to build, Acceptance criteria, Blocked by).
-
-When done, recommend `/sdlc:ship` (or `/sdlc:drain`) to implement the AFK slices in parallel.
+If `to-issues` isn't available, create the slices directly using its structure (Parent, What to build, Acceptance criteria). Then recommend `/sdlc:drain` (or `/sdlc:ship <issue>` for one).

@@ -1,60 +1,51 @@
 #!/usr/bin/env bash
-# blocked-by.sh <issue> [--all|--json]
+# blocked-by.sh <issue> [--json]
 #
-# Parses the "## Blocked by" section of an issue body (the aihero `to-issues`
-# convention) and reports blockers.
+# Prints the issue numbers of blockers that are still OPEN AND not yet integrated
+# — empty output means the issue is unblocked and may be worked.
 #
-#   (default)  print issue numbers of blockers that are still OPEN, one per line.
-#              Empty output  => the issue is unblocked and may be worked.
-#   --all      print every referenced blocker number, regardless of state.
-#   --json     print the OPEN (unmet) blockers as a JSON array.
-#
-# Blocker references are any `#<n>` or `.../issues/<n>` inside the Blocked-by
-# section. "None - can start immediately" therefore yields no blockers.
+# A blocker is considered CLEARED when it is closed OR labelled
+# `waiting-for-human-closure` (its work is already merged into the integration
+# branch). This is what lets the drain queue self-progress without auto-closing
+# issues. Sources: GitHub NATIVE dependencies first, then a "## Blocked by"
+# markdown section (legacy / external). Union, de-duplicated.
+#   --json   print the open blockers as a JSON array of numbers.
 set -euo pipefail
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
-
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib.sh"
 sdlc_require_cmd gh jq
 
-issue="${1:-}"; [[ -n "$issue" ]] || sdlc_die "usage: blocked-by.sh <issue> [--all|--json]"
-mode="${2:-open}"
-case "$mode" in --all) mode=all ;; --json) mode=json ;; *) mode=open ;; esac
+issue="${1:-}"; [[ -n "$issue" ]] || sdlc_die "usage: blocked-by.sh <issue> [--json]"
+json=0; [[ "${2:-}" == "--json" ]] && json=1
 
+# Candidate blockers: native dependencies (any state) + markdown #refs.
+native="$(bash "${SCRIPT_DIR}/dependency.sh" list "$issue" 2>/dev/null | cut -f1 || true)"
 body="$(gh issue view "$issue" --json body --jq .body 2>/dev/null || true)"
-
-# Isolate the "## Blocked by" section (up to the next ## heading).
 section="$(printf '%s\n' "$body" | awk '
   /^##.*[Bb]locked[[:space:]]+[Bb]y/ { f=1; next }
   f && /^##/ { f=0 }
-  f { print }
-')"
+  f { print }')"
+md="$( { printf '%s\n' "$section" | grep -oE '#[0-9]+' | tr -d '#'
+         printf '%s\n' "$section" | grep -oE 'issues/[0-9]+' | grep -oE '[0-9]+'; } 2>/dev/null || true)"
 
-# Collect referenced blocker numbers (from #n and issues/n forms), unique, sorted.
-refs="$(
-  {
-    printf '%s\n' "$section" | grep -oE '#[0-9]+'        | tr -d '#'
-    printf '%s\n' "$section" | grep -oE 'issues/[0-9]+'  | grep -oE '[0-9]+'
-  } 2>/dev/null | grep -E '^[0-9]+$' | grep -vx "$issue" | sort -un || true
-)"
+candidates="$(printf '%s\n%s\n' "$native" "$md" | grep -E '^[0-9]+$' | grep -vx "$issue" | sort -un || true)"
 
-if [[ "$mode" == "all" ]]; then
-  [[ -n "$refs" ]] && printf '%s\n' "$refs"
-  exit 0
-fi
-
-# Keep only blockers that are still OPEN.
-open_blockers=()
-if [[ -n "$refs" ]]; then
+# A candidate blocks iff it is OPEN and not yet integrated (waiting-for-human-closure).
+open_blockers=""
+if [[ -n "$candidates" ]]; then
   while IFS= read -r n; do
     [[ -n "$n" ]] || continue
-    state="$(gh issue view "$n" --json state --jq .state 2>/dev/null || echo "UNKNOWN")"
-    [[ "$state" == "OPEN" ]] && open_blockers+=("$n")
-  done <<<"$refs"
+    read -r state labels < <(gh issue view "$n" --json state,labels --jq '[.state, (.labels|map(.name)|join(","))] | @tsv' 2>/dev/null || echo $'UNKNOWN\t')
+    [[ "$state" == "OPEN" ]] || continue
+    [[ ",$labels," == *",${SDLC_LABEL_WAITING_CLOSURE},"* ]] && continue   # work already integrated
+    open_blockers+="$n"$'\n'
+  done <<<"$candidates"
 fi
+open_blockers="$(printf '%s' "$open_blockers" | grep -E '^[0-9]+$' | sort -un || true)"
 
-if [[ "$mode" == "json" ]]; then
-  printf '%s\n' "${open_blockers[@]:-}" | grep -E '^[0-9]+$' | jq -R . | jq -s 'map(tonumber)'
+if [[ $json -eq 1 ]]; then
+  printf '%s\n' "$open_blockers" | grep -E '^[0-9]+$' | jq -R . | jq -s 'map(tonumber)'
 else
-  [[ ${#open_blockers[@]} -gt 0 ]] && printf '%s\n' "${open_blockers[@]}"
+  [[ -n "$open_blockers" ]] && printf '%s\n' "$open_blockers" || true
 fi
 exit 0
