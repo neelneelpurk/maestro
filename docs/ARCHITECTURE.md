@@ -2,7 +2,6 @@
 
 `maestro` is a Claude Code **plugin** (`maestro`) distributed from a single-repo **marketplace** (`maestro`). It is **self-contained** (no external skill dependencies) — an autonomous, GitHub-native maestro with a coordinator + background-worker model.
 
-> See [WORKFLOW.md](WORKFLOW.md) for the end-to-end flow.
 
 ## Pipeline
 
