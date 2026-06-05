@@ -24,6 +24,26 @@
 
 `ship`/`drain`/`maestro:auto` are **coordinators**: they never implement. They dispatch `issue-implementer` subagents with the **`Agent` tool, `run_in_background: true`**, so the main agent stays interactive and **the user can participate**; it's notified as each worker finishes. Workers run concurrently up to `MAESTRO_MAX_PARALLEL`. The custom agent type requires a **session restart** to be spawnable (the agent registry is fixed at session start; skills hot-load).
 
+```mermaid
+sequenceDiagram
+    actor U as You
+    participant C as Coordinator
+    participant W as Worker
+    participant GH as GitHub
+
+    U->>C: /maestro:drain
+    C->>GH: integration.sh start — branch + integration PR
+    loop one Worker per ready issue (up to MAESTRO_MAX_PARALLEL)
+        C-)W: Agent(run_in_background) — issue-implementer
+        W->>W: worktree · test-first · quality gate
+        W->>GH: per-issue PR → integration branch
+        GH->>GH: auto-merge once green
+        W--)C: finished
+    end
+    Note over U,C: the coordinator never implements; you stay interactive
+    U->>GH: review & merge the integration PR (the single gate)
+```
+
 ## Integration-branch model (drain & auto)
 
 Full autonomy below the default branch, one human gate at it:

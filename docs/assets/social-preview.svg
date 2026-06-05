@@ -1,0 +1,61 @@
+<!-- Authored on a square 1280x1280 canvas so qlmanage renders it 1:1; the central
+     1280x640 band (y 320..960) is cropped out for the GitHub social preview. -->
+<svg width="1280" height="1280" viewBox="0 0 1280 1280" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1020"/>
+      <stop offset="0.55" stop-color="#140C33"/>
+      <stop offset="1" stop-color="#1A1140"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#A78BFA"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.55">
+      <stop offset="0" stop-color="#7C3AED" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="hub" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#EDE9FE"/>
+      <stop offset="0.45" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1280" height="1280" fill="url(#bg)"/>
+  <rect width="1280" height="1280" fill="url(#glow)"/>
+
+  <!-- everything below lives in the central 1280x640 crop band (y 320..960) -->
+  <rect x="0" y="320" width="1280" height="6" fill="url(#accent)"/>
+
+  <!-- AI agent-graph mark: a hub orchestrating four worker nodes, plus an AI spark -->
+  <g stroke="#8B5CF6" stroke-width="4" stroke-linecap="round" opacity="0.55" fill="none">
+    <line x1="640" y1="414" x2="568" y2="384"/>
+    <line x1="640" y1="414" x2="568" y2="470"/>
+    <line x1="640" y1="414" x2="712" y2="384"/>
+    <line x1="640" y1="414" x2="712" y2="470"/>
+    <line x1="568" y1="384" x2="712" y2="384"/>
+    <line x1="568" y1="470" x2="712" y2="470"/>
+  </g>
+  <g fill="url(#accent)">
+    <circle cx="568" cy="384" r="12"/>
+    <circle cx="568" cy="470" r="12"/>
+    <circle cx="712" cy="384" r="12"/>
+    <circle cx="712" cy="470" r="12"/>
+  </g>
+  <circle cx="640" cy="414" r="22" fill="url(#hub)" stroke="#C4B5FD" stroke-width="2" stroke-opacity="0.7"/>
+  <!-- AI spark -->
+  <path d="M726 356 L731 370 L745 375 L731 380 L726 394 L721 380 L707 375 L721 370 Z" fill="#EDE9FE"/>
+  <path d="M700 350 L702.5 357 L709 359.5 L702.5 362 L700 369 L697.5 362 L691 359.5 L697.5 357 Z" fill="#C4B5FD" opacity="0.85"/>
+
+  <text x="640" y="692" text-anchor="middle" font-size="138" font-weight="800" letter-spacing="-3" fill="#F8FAFC">maestro</text>
+
+  <rect x="556" y="718" width="168" height="6" rx="3" fill="url(#accent)"/>
+
+  <text x="640" y="782" text-anchor="middle" font-size="34" font-weight="500" fill="#C4B5FD">A multi-agent AI maestro for any GitHub repo</text>
+
+  <text x="640" y="848" text-anchor="middle" font-size="26" font-weight="600" fill="#E5E7EB">PRD  &#8594;  native sub-issues  &#8594;  parallel workers  &#8594;  one human review gate</text>
+
+  <text x="96" y="924" font-size="22" font-weight="500" fill="#8B93A7">github.com/neelneelpurk/maestro</text>
+  <text x="1184" y="924" text-anchor="end" font-size="22" font-weight="500" fill="#8B93A7">Claude Code plugin &#183; MIT</text>
+</svg>
