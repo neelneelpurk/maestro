@@ -7,7 +7,7 @@ git worktrees. Keep to them.
 ## Implementation
 - Implement exactly **one issue per worktree/branch**. Never edit files for, or comment on, another issue.
 - **Strictly test-first (TDD).** No production code without a failing test that demands it: red → green → refactor. Test external behaviour, not implementation details. Keep each change a thin vertical slice — exactly what the issue asks; honor its "Out of scope".
-- **Post the implementation plan to the issue when you start, and the changes summary at PR time**, so progress is trackable on the issue.
+- **Keep the GitHub issue a review log.** Post your implementation plan + a decomposition checklist when you start; as you work, append critical/hard-to-reverse decisions (link any ADR you write under `docs/adr/`), learnings, and ticked steps; post a changes summary at PR time. The issue should read as a clear trail of the work.
 - Use the canonical domain vocabulary in `CONTEXT.md`. Respect decisions recorded under `docs/adr/`; do not re-open a settled decision.
 
 ## Coding standards

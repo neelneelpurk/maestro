@@ -30,17 +30,26 @@ If `$S` is missing, STOP and ask the user to run `/sdlc:init`.
    cd "$WT"
    gh issue edit <n> --add-label in-progress
    ```
-5. **Post your implementation plan to the issue** (so progress is trackable):
+5. **Post your plan + decomposition to the issue** (so the work is reviewable as it happens):
    ```
    bash "$S/issue-note.sh" <n> --body-file plan.md
    ```
-   `plan.md` = a short "## Implementation plan": the approach, the modules/files you expect to change, and the **test plan** (which behaviours you'll drive out test-first). Keep it to the decision-rich points.
-6. **Implement strictly test-first** following [TDD.md](TDD.md): red → green → refactor, one behaviour at a time, until the acceptance criteria are met. Match the codebase's existing style, naming, and structure; keep the change a thin vertical slice. Follow `.claude/rules/sdlc.md` coding standards.
+   `plan.md` = "## Implementation plan": the approach, the modules you'll touch, the **test plan** (which behaviours you'll drive out test-first), and a **decomposition checklist** that breaks the task into small, ordered steps:
+   ```
+   - [ ] step 1
+   - [ ] step 2
+   ```
+6. **Implement strictly test-first** ([TDD.md](TDD.md)): red → green → refactor, one step at a time, until the acceptance criteria are met. Match the codebase's existing style, naming, and structure; keep it a thin vertical slice; follow `.claude/rules/sdlc.md`.
+   **Keep the issue as a review log as you go** — post a short `issue-note.sh` comment when you:
+   - finish a decomposition step (tick it: `- [x] step 1`);
+   - make a **critical or hard-to-reverse decision** — write an ADR under `docs/adr/` and link it on the issue;
+   - **learn something** from a correction or surprise — persist it (`bash "$S/learn-note.sh" "<rule>"`) and note it;
+   - discover the task **breaks into more parts** — add the new steps to the checklist.
 7. **Record the changes on the issue:**
    ```
    bash "$S/issue-note.sh" <n> --body-file changes.md
    ```
-   `changes.md` = a short "## Changes": what you changed and how each acceptance criterion is satisfied (this also becomes the PR summary).
+   `changes.md` = "## Changes": what you changed, any ADRs/learnings, and how each acceptance criterion is satisfied (this also becomes the PR summary; mirror the PR template).
 8. **Open the PR** (it runs the quality gate first — a red gate means no PR):
    ```
    bash "$S/open-pr.sh" <n> --base <base> --body-file changes.md

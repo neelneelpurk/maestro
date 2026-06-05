@@ -14,7 +14,7 @@ Read the PRD (`gh issue view <prd>`). Break it into **tracer-bullet** issues: ea
 Present the breakdown as a numbered list (title, AFK/HITL, blocked-by, which user stories it covers) and iterate with the user until they approve.
 
 ## 2. Publish the slices (in dependency order)
-For each approved slice, create a GitHub issue with: a "What to build" (end-to-end behaviour, no file paths/code), an "Acceptance criteria" checklist, and a "Blocked by" note. Then make it native to the pipeline:
+For each approved slice, create a GitHub issue following the task template (also seeded at `.github/ISSUE_TEMPLATE/task.md`): a "What to build" (end-to-end behaviour, no file paths/code), an "Acceptance criteria" checklist, and a "Blocked by" note. Then make it native to the pipeline:
 - create it **assigned to `@me`**, labelled **`ready-for-agent`** (use `hitl` instead for HITL slices; add `enhancement`/`bug` as apt);
 - link it as a sub-issue of the PRD: `.sdlc/scripts/subissue.sh add <prd> <child>`;
 - set dependencies: `.sdlc/scripts/dependency.sh add <issue> <blocker>` (publish blockers first so you can reference them).
