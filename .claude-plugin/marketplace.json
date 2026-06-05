@@ -1,18 +1,18 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "ai-sdlc",
-  "description": "A downloadable, multi-agent AI SDLC for any GitHub repo: PRD → aligned domain docs → vertical-slice issues → parallel subagents that each open a PR.",
+  "name": "maestro",
+  "description": "A downloadable, multi-agent AI maestro for any GitHub repo: PRD → aligned domain docs → vertical-slice issues → parallel subagents that each open a PR.",
   "owner": {
     "name": "Soumyadeep Purkait",
     "email": "hello@soumyadeeppurkait.xyz"
   },
   "plugins": [
     {
-      "name": "sdlc",
-      "source": "./plugins/sdlc",
-      "description": "Autonomous, multi-agent AI SDLC for any GitHub repo: plan a PRD, break it into native sub-issues, and fan out background workers that implement test-first and land each issue on an integration branch with one human review gate. Skills, hooks, scripts, subagents, and loops.",
+      "name": "maestro",
+      "source": "./plugins/maestro",
+      "description": "Autonomous, multi-agent AI maestro for any GitHub repo: plan a PRD, break it into native sub-issues, and fan out background workers that implement test-first and land each issue on an integration branch with one human review gate. Skills, hooks, scripts, subagents, and loops.",
       "category": "development",
-      "homepage": "https://github.com/neelneelpurk/ai-sdlc"
+      "homepage": "https://github.com/neelneelpurk/maestro"
     }
   ]
 }

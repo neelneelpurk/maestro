@@ -1,0 +1,20 @@
+{
+  "description": "maestro: PR quality-gate backstop and AI-disclaimer guard (PreToolUse on Bash). Drain/auto loop via background workers + /loop, not a Stop hook.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/pr-quality-gate.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/ai-disclaimer-guard.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

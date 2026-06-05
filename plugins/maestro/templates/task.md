@@ -1,9 +1,3 @@
----
-name: Task (vertical slice)
-about: One implementable vertical slice; usually created by /maestro:issues
-labels: ready-for-agent
----
-
 <!-- Task = one tracer-bullet vertical slice. Authored by /maestro:issues. -->
 
 ## Parent

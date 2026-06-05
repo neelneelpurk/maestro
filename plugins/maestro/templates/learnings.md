@@ -8,4 +8,3 @@ prune duplicates over time.
 ## Learnings
 
 <!-- e.g. - (2026-06-05) Never commit generated files; add them to .gitignore. -->
-- (2026-06-05) Keep all bash scripts compatible with bash 3.2 (macOS /bin/bash): no mapfile/readarray, no associative arrays.

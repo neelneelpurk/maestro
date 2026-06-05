@@ -1,6 +1,6 @@
 # Testing
 
-This repo's checks run through a single **quality gate** that the SDLC pipeline
+This repo's checks run through a single **quality gate** that the maestro pipeline
 also enforces automatically before any pull request is opened. To validate your
 changes locally, run the same gate yourself.
 
@@ -9,7 +9,7 @@ changes locally, run the same gate yourself.
 From the repo root:
 
 ```bash
-.sdlc/scripts/quality-gate.sh
+.maestro/scripts/quality-gate.sh
 ```
 
 The gate runs, in order:
@@ -27,7 +27,7 @@ To skip the install step on a repeat run (for example when dependencies are
 already installed), pass `--no-install`:
 
 ```bash
-.sdlc/scripts/quality-gate.sh --no-install
+.maestro/scripts/quality-gate.sh --no-install
 ```
 
 ### How steps are chosen
@@ -47,31 +47,31 @@ A tool that is simply missing is skipped (and noted); a tool that is present but
 exits non-zero fails the gate. If nothing is detected and no overrides are set,
 the gate runs nothing and warns you to configure it.
 
-## Overriding the commands (`.sdlc/config.sh`)
+## Overriding the commands (`.maestro/config.sh`)
 
-Auto-detection can be overridden per repo in `.sdlc/config.sh` (this file is
-machine-local and gitignored — it is created by `/sdlc:init`). Each step has its
+Auto-detection can be overridden per repo in `.maestro/config.sh` (this file is
+machine-local and gitignored — it is created by `/maestro:init`). Each step has its
 own variable:
 
-- `SDLC_INSTALL_CMD`
-- `SDLC_LINT_CMD`
-- `SDLC_TYPECHECK_CMD`
-- `SDLC_TEST_CMD`
+- `MAESTRO_INSTALL_CMD`
+- `MAESTRO_LINT_CMD`
+- `MAESTRO_TYPECHECK_CMD`
+- `MAESTRO_TEST_CMD`
 
 Setting a variable replaces the auto-detected command for that step. Setting it
 to the **empty string** explicitly **skips** that step. (The same variables can
 also be supplied as environment variables.)
 
 For example, this repo is a Bash + Markdown project with no conventional test
-runner, so `.sdlc/config.sh` skips install/lint/typecheck and defines a test
+runner, so `.maestro/config.sh` skips install/lint/typecheck and defines a test
 step that syntax-checks the shipped scripts:
 
 ```bash
-SDLC_INSTALL_CMD=""
-SDLC_LINT_CMD=""
-SDLC_TYPECHECK_CMD=""
-SDLC_TEST_CMD='ok=1; for f in plugins/sdlc/scripts/*.sh; do bash -n "$f" || ok=0; done; [ "$ok" = 1 ] && echo "all scripts parse"'
+MAESTRO_INSTALL_CMD=""
+MAESTRO_LINT_CMD=""
+MAESTRO_TYPECHECK_CMD=""
+MAESTRO_TEST_CMD='ok=1; for f in plugins/maestro/scripts/*.sh; do bash -n "$f" || ok=0; done; [ "$ok" = 1 ] && echo "all scripts parse"'
 ```
 
-After editing `.sdlc/config.sh`, re-run `.sdlc/scripts/quality-gate.sh` to
+After editing `.maestro/config.sh`, re-run `.maestro/scripts/quality-gate.sh` to
 confirm the gate is green.

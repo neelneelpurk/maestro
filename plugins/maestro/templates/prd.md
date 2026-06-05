@@ -1,9 +1,3 @@
----
-name: PRD
-about: Product requirements (parent epic); usually created by /maestro:plan-with-agent
-labels: prd
----
-
 <!-- PRD (parent epic). Authored by /maestro:plan-with-agent. Keep it behavioural —
      no file paths or code snippets (they go stale). -->
 
