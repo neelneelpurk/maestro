@@ -2,6 +2,8 @@
 
 `ai-sdlc` is a Claude Code **plugin** (`sdlc`) distributed from a single-repo **marketplace** (`ai-sdlc`). It is **self-contained** (no external skill dependencies) — an autonomous, GitHub-native SDLC with a coordinator + background-worker model.
 
+> See [WORKFLOW.md](WORKFLOW.md) for the end-to-end flow.
+
 ## Pipeline
 
 ```
