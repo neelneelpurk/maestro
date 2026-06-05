@@ -1,16 +1,10 @@
-# --- AI SDLC runtime state (created in the *target* repo by /sdlc:init) ---
-# The whole .sdlc/ directory is machine-local: it holds the installed copy of
-# the scripts (referenced by absolute path), generated config.sh, loop state,
-# and logs. Nothing in here is meant to be committed.
-.sdlc/
-# Loop / session state files, wherever they land.
+# --- maestro runtime (machine-local; created in the target repo by /maestro:init) ---
+.maestro/
 *.local.md
 
-# --- Parallel per-issue worktrees ---
-# make-worktree.sh creates these as a sibling dir (../ai-sdlc-worktrees) by
-# default, but ignore any in-tree copies just in case.
-ai-sdlc-worktrees/
-.sdlc-worktrees/
+# --- parallel per-issue worktrees (created as a sibling dir) ---
+maestro-worktrees/
+.maestro-worktrees/
 
 # --- OS / editor noise ---
 .DS_Store
