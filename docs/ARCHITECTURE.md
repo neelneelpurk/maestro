@@ -73,7 +73,7 @@ Subagents — including background workers in worktrees — inherit the repo's `
 
 ## Key decisions
 
-- **Plugin in a subdir, `/maestro` namespace** — marketplace `maestro` lists plugin `maestro` at `./plugins/maestro`. Commands and skills share the `/maestro:` namespace, so each name is defined **once** (orchestrations are skills, for composability via the Skill tool; `init`/`status`/`issues` are commands).
+- **Plugin in a subdir, `/maestro` namespace** — marketplace `maestro` lists plugin `maestro` at `./plugins/maestro`. Commands and skills share the `/maestro:` namespace. Each orchestration is defined **once** as a skill (for composability via the Skill tool), and surfaced as a typed `/maestro:<name>` slash command by a thin `commands/<name>.md` wrapper that just invokes that skill — so the command menu and the model-invocable skill stay in sync. `init`/`status`/`issues` are plain commands that run scripts directly.
 - **`.maestro/` is machine-local runtime** (gitignored), referenced by **absolute path**; `lib.sh` resolves config + shared state from the **main worktree root** (via `git --git-common-dir`) so scripts work correctly inside worktrees.
 - **bash 3.2 compatible** (no `mapfile`/assoc-arrays) — macOS `/bin/bash`.
 - **Await review at the default branch**; full autonomy on the integration branch.
