@@ -1,0 +1,43 @@
+<!-- Authored on a square 1280x1280 canvas so qlmanage renders it 1:1; the central
+     1280x640 band (y 320..960) is cropped out for the GitHub social preview. -->
+<svg width="1280" height="1280" viewBox="0 0 1280 1280" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1020"/>
+      <stop offset="0.55" stop-color="#140C33"/>
+      <stop offset="1" stop-color="#1A1140"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#A78BFA"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.55">
+      <stop offset="0" stop-color="#7C3AED" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1280" height="1280" fill="url(#bg)"/>
+  <rect width="1280" height="1280" fill="url(#glow)"/>
+
+  <!-- everything below lives in the central 1280x640 crop band (y 320..960) -->
+  <rect x="0" y="320" width="1280" height="6" fill="url(#accent)"/>
+
+  <!-- musical note mark, centred above the wordmark -->
+  <g transform="translate(560,356)">
+    <rect x="78" y="6" width="11" height="120" rx="5.5" fill="url(#accent)"/>
+    <path d="M89 6 q44 12 34 66 q-2 -34 -34 -42 z" fill="url(#accent)"/>
+    <ellipse cx="52" cy="120" rx="36" ry="26" fill="url(#accent)" transform="rotate(-18 52 120)"/>
+  </g>
+
+  <text x="640" y="692" text-anchor="middle" font-size="138" font-weight="800" letter-spacing="-3" fill="#F8FAFC">maestro</text>
+
+  <rect x="556" y="718" width="168" height="6" rx="3" fill="url(#accent)"/>
+
+  <text x="640" y="782" text-anchor="middle" font-size="34" font-weight="500" fill="#C4B5FD">A multi-agent AI maestro for any GitHub repo</text>
+
+  <text x="640" y="848" text-anchor="middle" font-size="26" font-weight="600" fill="#E5E7EB">PRD  &#8594;  native sub-issues  &#8594;  parallel workers  &#8594;  one human review gate</text>
+
+  <text x="96" y="924" font-size="22" font-weight="500" fill="#8B93A7">github.com/neelneelpurk/maestro</text>
+  <text x="1184" y="924" text-anchor="end" font-size="22" font-weight="500" fill="#8B93A7">Claude Code plugin &#183; MIT</text>
+</svg>
