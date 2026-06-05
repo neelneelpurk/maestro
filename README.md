@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>🎼 maestro</h1>
+<h1>🤖 maestro</h1>
 
 <p><b>A downloadable, multi-agent AI maestro for any GitHub repo.</b></p>
 
