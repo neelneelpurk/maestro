@@ -62,13 +62,15 @@ flowchart TD
 | `/maestro:init` | One-time setup: labels, `.maestro/` runtime, PR template — **and** a short discussion that writes your project context into `CLAUDE.md`, `AGENTS.md`, `.claude/rules/maestro.md`, `docs/GLOSSARY.md`. |
 | `/maestro:plan-with-agent` | Grill a feature against the domain model (updating `CONTEXT.md` + ADRs), then publish a **PRD** as a parent issue. |
 | `/maestro:issues <prd#>` | Break the PRD into **sub-issues** with **native dependencies**, labelled `maestro:ready-for-agent`, assigned to you. |
+| `/maestro:share_implementation_plan <issue#>` | Draft a **test-first plan** for an issue and post it as a comment — no code, no PR. Review the approach before building. |
 | `/maestro:ship <issue#>` | Implement **one** issue (supervised) — a background worker opens a PR to the default branch; awaits your review. |
 | `/maestro:drain` | Implement **all** your ready issues in **dependency order** on an **integration branch**; each per-issue PR auto-merges into it; the integration PR is your one review gate. |
 | `/maestro:auto` | Autonomous loop: `maestro:roadmap` → `drain`, repeatedly. Issues it creates are labelled `maestro:auto` and skip the human `maestro:ready-for-agent` gate. |
 | `/maestro:roadmap` | Analyze what's already shipped → propose next features + tech-debt → create issues under a roadmap parent + milestone. |
 | `/maestro:code-feedback [pr#]` | Review a PR (inline GitHub review) or the whole codebase (report + optional `maestro:ready-for-agent` `maestro:tech-debt` issues). Asks you for scope + focus. |
 | `/maestro:code-architecture-map` | Map the codebase (modules, seams, dependencies) → `docs/architecture-map.md` + optional HTML report. |
-| `/maestro:status [close-integrated]` | The pipeline board; or close out a merged integration run. |
+| `/maestro:status [close-integrated]` | The pipeline board (now with a **recent-runs** summary); or close out a merged integration run. |
+| `/maestro:merge_pr [pr#]` | Merge a PR and **close the issues it covers** in one step. No number → the integration PR + its whole run. Your manual review gate. |
 
 The coordinator commands (`ship`, `drain`, `maestro:auto`) **only coordinate** — they dispatch **background** `issue-implementer` workers and stay responsive, so **you can keep participating** in the same session.
 
@@ -142,7 +144,8 @@ See [docs/GLOSSARY.md](docs/GLOSSARY.md) for the full label state machine and [d
 ## Further reading
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — the full design (coordinator + background workers, the GitHub-native data model).
 - [docs/GLOSSARY.md](docs/GLOSSARY.md) — labels and the complete state machine.
-- [docs/TESTING.md](docs/TESTING.md) — the quality gate and how to run it locally.
+- [docs/TESTING.md](docs/TESTING.md) — the quality gate and the pure-bash test suite.
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — failure modes and how to recover (stuck runs, conflicts, gate, worktrees).
 - [CONTRIBUTING.md](CONTRIBUTING.md) — project layout and pull-request conventions.
 - [blog/one-human-gate.md](blog/one-human-gate.md) — the story behind the design.
 

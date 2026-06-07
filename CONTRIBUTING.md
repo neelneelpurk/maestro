@@ -7,7 +7,8 @@ conventions the pipeline relies on.
 
 If you are new to the project, start with the [README](README.md) for the
 big-picture pipeline, and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the
-full design.
+full design. When something goes wrong, see
+[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Project layout
 
@@ -22,7 +23,7 @@ plugins/maestro/
 ├── commands/           # slash commands — the /maestro:* entry points (e.g. ship.md)
 ├── skills/             # multi-step skills, one directory per skill with a SKILL.md
 │   ├── implement-issue/        # take ONE issue → worktree → quality gate → PR
-│   └── ship-ready-issues/      # fan out: one subagent + one PR per ready issue
+│   └── drain/ ship/ roadmap/ … # one directory per orchestration skill
 ├── agents/             # subagent definitions (e.g. issue-implementer.md)
 ├── hooks/              # lifecycle hooks (drain-loop Stop hook, PR quality-gate /
 │                       #   disclaimer PreToolUse hooks)
@@ -86,9 +87,11 @@ What the gate does:
 
 - It **auto-detects the toolchain** in the current directory and runs
   `install → lint → typecheck → test`, running only the steps that apply.
-- For **this** repo (bash + Markdown), the gate syntax-checks every committed
-  script — effectively `bash -n plugins/maestro/scripts/*.sh`. So at minimum, make
-  sure every script you touch parses cleanly.
+- For **this** repo (bash + Markdown), the gate auto-detects the `Makefile` and
+  runs `make lint` (shellcheck, when installed) + `make test` — the dependency-free
+  pure-bash suite under `tests/` (`bash tests/run.sh`). Add a
+  `tests/unit/<name>_test.sh` for any behaviour you change; see
+  [docs/TESTING.md](docs/TESTING.md).
 - Steps are overridable per-repo via `.maestro/config.sh` (or environment
   variables): `MAESTRO_INSTALL_CMD`, `MAESTRO_LINT_CMD`, `MAESTRO_TYPECHECK_CMD`,
   `MAESTRO_TEST_CMD`. Setting an override to the empty string **skips** that step.
