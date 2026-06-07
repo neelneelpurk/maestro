@@ -9,6 +9,7 @@
 /maestro:init            set up the repo + write CLAUDE.md / AGENTS.md / rules / glossary
 /maestro:plan-with-agent grill the domain model → publish a PRD (parent issue)
 /maestro:issues          PRD → native sub-issues + dependencies, ready-for-agent
+/maestro:share_implementation_plan <issue>  draft a test-first plan → post it as an issue comment (no code)
 /maestro:ship <issue>    one issue → PR to the default branch → in-review (supervised)
 /maestro:drain           all ready issues → integration branch (dependency-ordered, per-issue PRs auto-merged)
 /maestro:auto            loop: roadmap (auto-labelled) → drain, until caught up
@@ -17,8 +18,16 @@
 /maestro:code-architecture-map  module/seam/dependency map
 /maestro:review          review any PR (multi-dimension) → post a GitHub review
 /maestro:learn           persist a correction as a durable, inherited learning
-/maestro:status          board / close out a merged integration run
+/maestro:status          board (+ recent-runs summary) / close out a merged integration run
+/maestro:merge_pr [pr]   merge a PR + close the issues it covers (default: the integration PR) — manual gate
 ```
+
+**Run observability.** Each `ship`/`drain`/`auto` pass is a *run*: `runs.sh start`
+writes `.maestro/run.local` so every script — including background workers, which
+resolve the same main-worktree state dir — stamps its `log.jsonl` events with one
+`run_id`. `runs.sh list`/`show` (and `/maestro:status`) summarize a run from those
+events. The quality gate refuses a **false green**: if nothing runs it fails unless
+`MAESTRO_ALLOW_EMPTY_GATE=1`.
 
 ## Execution model — coordinator + background workers
 

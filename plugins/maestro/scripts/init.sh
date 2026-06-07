@@ -90,7 +90,7 @@ mkdir -p .claude/rules docs
 _seed() { # _seed <template> <dest>
   if [[ -f "$2" ]]; then echo "   ${2} already exists — left as-is"
   elif [[ -f "$1" ]]; then cp "$1" "$2"; echo "   wrote ${2}"
-  else maestro_warn "template missing: $(basename "$1")"; fi
+  else maestro_die "template missing: $1 — this maestro install looks incomplete; reinstall the plugin and re-run /maestro:init"; fi
 }
 _seed "${tpl}/maestro.rules.md" ".claude/rules/maestro.md"
 _seed "${tpl}/learnings.md"  ".claude/rules/learnings.md"

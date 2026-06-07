@@ -52,3 +52,8 @@ jq -r '.[] | "   #\(.number)  \(.title)  [\(.headRefName)]"' <<<"$prs"
 echo
 printf '■ '
 bash "${SCRIPT_DIR}/integration.sh" status 2>/dev/null || echo "no active integration run."
+
+# Recent runs (from the structured log) — see `runs.sh show` for a full breakdown.
+echo
+echo "■ Recent runs"
+bash "${SCRIPT_DIR}/runs.sh" list -n 5 2>/dev/null | sed 's/^/   /' || true

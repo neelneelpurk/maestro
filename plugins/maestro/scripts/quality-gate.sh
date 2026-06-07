@@ -97,8 +97,18 @@ if [[ ${#FAILED[@]} -gt 0 ]]; then
   exit 1
 fi
 if [[ $RAN -eq 0 ]]; then
-  echo "⚠ quality gate: no toolchain detected and no overrides set — nothing ran." >&2
-  echo "  Set MAESTRO_TEST_CMD / MAESTRO_LINT_CMD in .maestro/config.sh to enforce checks." >&2
+  # Nothing ran: refuse to report a false green (it would let broken/unconfigured
+  # repos open green PRs). Allow it only when the user explicitly opts in.
+  if [[ "${MAESTRO_ALLOW_EMPTY_GATE:-0}" == "1" ]]; then
+    echo "⚠ quality gate: nothing ran; MAESTRO_ALLOW_EMPTY_GATE=1 set — treating as pass." >&2
+    maestro_log quality-gate result=empty-allowed 2>/dev/null || true
+    exit 0
+  fi
+  echo "✗ quality gate: no toolchain detected and no checks configured — nothing ran." >&2
+  echo "  Refusing to report a false green. Configure a step in .maestro/config.sh" >&2
+  echo "  (e.g. MAESTRO_TEST_CMD), or set MAESTRO_ALLOW_EMPTY_GATE=1 to allow an empty gate." >&2
+  maestro_log quality-gate result=empty-fail 2>/dev/null || true
+  exit 1
 fi
 echo "✔ quality gate passed" >&2
 maestro_log quality-gate result=pass 2>/dev/null || true

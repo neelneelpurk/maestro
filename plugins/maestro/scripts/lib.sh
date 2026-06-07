@@ -178,6 +178,20 @@ maestro_version() {
   printf '%s\n' "$_MAESTRO_VERSION"
 }
 
+# maestro_perm_ok <viewerPermission> — return 0 if a GitHub repo permission level
+# is enough to drive the pipeline (open issues/PRs, push branches). Used by doctor.
+maestro_perm_ok() {
+  case "${1:-}" in
+    ADMIN|MAINTAIN|WRITE) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# maestro_new_run_id — print a fresh, sortable run id (UTC stamp + pid). A "run" is
+# one drain/ship/auto pass; stamping every log event with it (see MAESTRO_RUN_ID
+# below) lets runs.sh summarize a whole run. `date` is fine here (not replayed).
+maestro_new_run_id() { printf '%s-%s\n' "$(date -u +%Y%m%d-%H%M%S)" "$$"; }
+
 # maestro_log <event> [key=value ...] — append a JSON line to .maestro/log.jsonl.
 # Timestamps via `date` are fine here (these scripts are not workflow-replayed).
 maestro_log() {
@@ -189,6 +203,12 @@ maestro_log() {
     k="${kv%%=*}"; v="${kv#*=}"
     kv_json="$(jq -c --arg k "$k" --arg v "$v" '. + {($k): $v}' <<<"$kv_json")"
   done
+  # Stamp the active run id so a whole drain/ship/auto pass can be summarized.
+  # Prefer the explicit env var; fall back to .maestro/run.local (written by
+  # `runs.sh start`) so background workers in their own worktrees agree on it.
+  local rid="${MAESTRO_RUN_ID:-}"
+  [[ -z "$rid" && -f "${dir}/run.local" ]] && rid="$(cat "${dir}/run.local" 2>/dev/null || true)"
+  [[ -n "$rid" ]] && kv_json="$(jq -c --arg v "$rid" '. + {run_id: $v}' <<<"$kv_json")"
   jq -cn --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg event "$event" --argjson data "$kv_json" \
     '{ts: $ts, event: $event} + $data' >>"${dir}/log.jsonl"
 }

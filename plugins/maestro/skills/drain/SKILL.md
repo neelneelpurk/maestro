@@ -10,7 +10,7 @@ You are the **coordinator**. You do NOT implement and you NEVER merge the integr
 ## Steps
 
 1. Locate scripts: `cd "$(git rev-parse --show-toplevel)"; source .maestro/config.sh 2>/dev/null || true; S="${MAESTRO_SCRIPTS:-$(pwd)/.maestro/scripts}"`.
-2. **Start (or reuse) the integration run:** `INTB=$(bash "$S/integration.sh" start)`. This opens the integration PR — your single review gate. Tell the user its URL (`bash "$S/integration.sh" status`).
+2. **Begin an observable run, then the integration run:** `RUN=$(bash "$S/runs.sh" start)` — this stamps every event from here on (including each background worker, which shares the main worktree's state) with one run id, so you and the user can watch progress with `bash "$S/runs.sh" show`. Then `INTB=$(bash "$S/integration.sh" start)` — this opens the integration PR, your single review gate. Tell the user its URL (`bash "$S/integration.sh" status`).
 3. **Queue loop:**
    a. `bash "$S/ready-issues.sh"` → issues assigned to me, `maestro:ready-for-agent` or `maestro:auto`, **unblocked** (no open blockers; a blocker counts as cleared once it's `maestro:waiting-for-human-closure`).
    b. If it's empty **and** no workers are still running → the queue is drained. Go to step 4.
@@ -19,6 +19,6 @@ You are the **coordinator**. You do NOT implement and you NEVER merge the integr
       (Fallback to `general-purpose` following the `implement-issue` skill if the agent type isn't loaded yet.)
    d. End your turn so the user can participate. Each worker, on finishing, merges its per-issue PR into the integration branch and relabels its issue `maestro:waiting-for-human-closure` — which **unblocks dependents**.
    e. When a worker completes you'll be notified: **re-run step (a)** and dispatch any newly-unblocked issues (the next dependency layer). As a safety heartbeat you may also `ScheduleWakeup` to re-check.
-4. **Done:** report the table of integrated issues → per-issue PRs, and the **integration PR** for the human to review and merge. Remind them: merging the integration PR then `bash "$S/integration.sh" close-integrated` closes the `maestro:waiting-for-human-closure` issues.
+4. **Done:** end the run (`bash "$S/runs.sh" end`) and print its summary (`bash "$S/runs.sh" show`). Report the table of integrated issues → per-issue PRs, and the **integration PR** for the human to review and merge. Remind them: merging the integration PR then `bash "$S/integration.sh" close-integrated` — or simply `/maestro:merge_pr` — closes the `maestro:waiting-for-human-closure` issues.
 
 Never merge the integration PR or the default branch.

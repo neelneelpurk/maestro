@@ -13,4 +13,4 @@ You are the **coordinator** of an autonomous loop. You never implement and never
 2. **Drain.** Invoke the **`drain`** skill: it starts an integration run and dispatches background workers in dependency order until the queue (now including the `maestro:auto` issues) is empty.
 3. **Continue or stop.** If the roadmap step produced **no new actionable work**, stop and report — the maestro is caught up. Otherwise schedule the next iteration with `ScheduleWakeup` (self-paced) and repeat. (Equivalent to `/loop /maestro:auto`.)
 
-After each iteration, report what was created and integrated, and surface the open integration PR(s) for review. Keep the user in control: if they send a message, respond and let them redirect the loop.
+After each iteration, report what was created and integrated, and surface the open integration PR(s) for review. Each `drain` iteration is an observable run — `bash "$S/runs.sh" list` shows them, `bash "$S/runs.sh" show` breaks down the latest. Keep the user in control: if they send a message, respond and let them redirect the loop.

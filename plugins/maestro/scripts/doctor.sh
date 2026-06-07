@@ -62,7 +62,34 @@ else
   fi
 fi
 
-# 5. .maestro/scripts installed ------------------------------------------------
+# 5. GitHub API reachable (network + token actually work) ---------------------
+if command -v gh >/dev/null 2>&1 && gh api rate_limit >/dev/null 2>&1; then
+  pass "GitHub API reachable"
+else
+  fail "GitHub API not reachable" "check your network/proxy and that gh is authenticated (gh auth status)"
+fi
+
+# 6. Repo write access (can we actually open issues/PRs here?) ----------------
+if command -v gh >/dev/null 2>&1; then
+  perm="$(gh repo view --json viewerPermission --jq '.viewerPermission // empty' 2>/dev/null || true)"
+  if [[ -z "$perm" ]]; then
+    fail "could not determine repo permission" "ensure gh is authenticated and this repo has a GitHub remote"
+  elif maestro_perm_ok "$perm"; then
+    pass "repo write access (${perm})"
+  else
+    fail "insufficient repo permission (${perm})" "you need write access to open PRs/issues — re-auth a token with repo scope or ask an admin"
+  fi
+fi
+
+# 7. State dir writeable (logs, run + integration state) ----------------------
+state_root="${MAESTRO_DIR}"; [[ -d "$state_root" ]] || state_root="."
+if [[ -w "$state_root" ]]; then
+  pass "state dir writeable (${MAESTRO_DIR}/)"
+else
+  fail "cannot write the state dir (${MAESTRO_DIR}/)" "check write permissions in this repo"
+fi
+
+# 8. .maestro/scripts installed ------------------------------------------------
 if [[ -d "${MAESTRO_DIR}/scripts" ]]; then
   pass "pipeline scripts installed (${MAESTRO_DIR}/scripts)"
 else
