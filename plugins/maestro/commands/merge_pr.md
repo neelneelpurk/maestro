@@ -1,6 +1,7 @@
 ---
 description: Merge a maestro PR and close the issues it covers. With no number, merges the active integration PR and closes its whole run's issues. Your manual review gate — never used by the autonomous lane.
 argument-hint: "[pr#] [--squash|--merge|--rebase] [--admin]"
+allowed-tools: Bash
 ---
 
 ```!

@@ -1,6 +1,7 @@
 ---
 description: Show the pipeline board; or `close-integrated` to close out a merged integration run.
 argument-hint: "[close-integrated]"
+allowed-tools: Bash
 ---
 
 ```!
