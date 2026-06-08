@@ -1,6 +1,7 @@
 ---
 description: Set up this repo for the pipeline (labels, .maestro runtime, PR template, rules, glossary) and create project context (CLAUDE.md / AGENTS.md).
 argument-hint: ""
+allowed-tools: Bash, Read, Edit, Write, AskUserQuestion
 ---
 
 Set up this repository for the maestro pipeline:
