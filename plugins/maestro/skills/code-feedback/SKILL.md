@@ -20,7 +20,7 @@ Use `AskUserQuestion` to settle:
 
 ## 2b. Whole-codebase scope
 - Fan out parallel `Explore`/review subagents across subsystems (correctness, security, performance, dead code, test coverage). Synthesize a findings report grouped by severity, using `CONTEXT.md` vocabulary and respecting `docs/adr/`.
-- If the user opts in, open issues for actionable findings: `gh issue create ... --label maestro:ready-for-agent --assignee @me` (add `maestro:tech-debt` for debt) so `/maestro:ship` or `/maestro:auto` can fix them; set dependencies where findings build on each other.
+- If the user opts in, open issues for actionable findings: `gh issue create ... --label agent:ready-for-agent --assignee @me` (add `agent:tech-debt` for debt) so `/maestro:ship` or `/maestro:auto` can fix them; set dependencies where findings build on each other.
 
 ## 3. Report
 Summarize what you reviewed, the review(s) posted, and any issues opened. Locate scripts first: `source .maestro/config.sh; S="${MAESTRO_SCRIPTS:-$(pwd)/.maestro/scripts}"`.

@@ -27,7 +27,7 @@ Synthesize a PRD from the conversation and codebase understanding (do not re-int
 - **Testing Decisions** — what to test (external behaviour), at which seams, and prior art in the codebase.
 - **Out of Scope** — what this PRD deliberately excludes.
 
-Use the PRD template structure (also seeded at `.github/ISSUE_TEMPLATE/prd.md`). Publish it as a GitHub issue labelled **`maestro:prd`** (the parent epic), assigned `@me`. Do **not** label it `maestro:ready-for-agent` — a PRD is a parent, not an implementable slice.
+Use the PRD template structure (also seeded at `.github/ISSUE_TEMPLATE/prd.md`). Publish it as a GitHub issue labelled **`agent:prd`** (the parent epic), assigned `@me`. Do **not** label it `agent:ready-for-agent` — a PRD is a parent, not an implementable slice.
 
 ## 3. Next
 Recommend `/maestro:issues <prd-issue>` to break the PRD into sub-issues with native dependencies.

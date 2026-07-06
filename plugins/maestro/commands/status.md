@@ -11,4 +11,4 @@ case "$ARGUMENTS" in
 esac
 ```
 
-If you showed the board, highlight what needs the user: the integration PR or `maestro:in-review` PRs awaiting review, `maestro:hitl` issues, blocked work, and issues `maestro:waiting-for-human-closure` (after merging the integration PR, run `/maestro:status close-integrated` to close them).
+If you showed the board, highlight what needs the user: the integration PR or `agent:in-review` PRs awaiting review, `agent:hitl` issues, blocked work, and issues `agent:waiting-for-human-closure` (after merging the integration PR, run `/maestro:status close-integrated` to close them).

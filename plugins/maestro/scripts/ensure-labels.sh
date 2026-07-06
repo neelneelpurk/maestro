@@ -33,7 +33,7 @@ labels=(
   "${MAESTRO_LABEL_INTEGRATION}|0e8a16|The integration -> default-branch PR (your review gate)"
 )
 
-echo "Ensuring maestro labels on ${repo} ..."
+echo "Ensuring agent: labels on ${repo} ..."
 for entry in "${labels[@]}"; do
   IFS='|' read -r name color desc <<<"$entry"
   if gh label create "$name" --color "$color" --description "$desc" --force >/dev/null 2>&1; then

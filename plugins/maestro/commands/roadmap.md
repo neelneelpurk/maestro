@@ -1,6 +1,6 @@
 ---
-description: Decide what to build next — find missing features and tech-debt vs. what's shipped, prioritize, and create issues under a roadmap parent + milestone.
-argument-hint: ""
+description: Decide what to build next — find missing features and tech-debt vs. what's shipped, prioritize, and create issues under a roadmap parent + milestone. Optionally steered by a goal.
+argument-hint: "[goal] [-- context]"
 ---
 
-Run the maestro **roadmap** orchestration now: invoke the `maestro:roadmap` skill with the Skill tool and follow it through to completion.
+Run the maestro **roadmap** orchestration now: invoke the `maestro:roadmap` skill with the Skill tool and follow it through to completion. Goal/context, if given: $ARGUMENTS

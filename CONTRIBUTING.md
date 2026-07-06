@@ -132,7 +132,7 @@ for you from inside the issue's worktree:
 
 This pushes your branch, opens a PR with the disclaimer, `Closes #<n>`, the
 acceptance criteria, and a commit summary, then relabels the issue to
-`maestro:in-review` and comments the PR link back on the issue.
+`agent:in-review` and comments the PR link back on the issue.
 
 ## License
 

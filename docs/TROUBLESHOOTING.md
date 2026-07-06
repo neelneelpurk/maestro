@@ -45,15 +45,15 @@ incomplete (a `templates/*.md` file is absent). Reinstall the plugin and re-run
 `/maestro:drain` and `/maestro:ship` work the queue from
 `bash .maestro/scripts/ready-issues.sh`. An issue is picked only when it is **open**,
 **assigned to you** (`MAESTRO_ASSIGNEE`, default `@me`), labelled
-`maestro:ready-for-agent` **or** `maestro:auto`, **not** already in-flight
+`agent:ready-for-agent` **or** `agent:auto`, **not** already in-flight
 (`in-progress`/`in-review`/`waiting-for-human-closure`/`hitl`), **not** a
-`maestro:prd`/`maestro:roadmap` parent, and **unblocked**. Common misses:
+`agent:prd`/`agent:roadmap` parent, and **unblocked**. Common misses:
 
 - **Not assigned to you.** Assign it (`gh issue edit <n> --add-assignee @me`) or
   check with `bash .maestro/scripts/ready-issues.sh --anyone`.
 - **Still blocked.** See its blockers: `bash .maestro/scripts/blocked-by.sh <n>`. A
   blocker clears only when it is **closed** or labelled
-  `maestro:waiting-for-human-closure`.
+  `agent:waiting-for-human-closure`.
 - **Label search lag.** GitHub's label search is eventually consistent — an issue
   you just labelled can take a few seconds to appear. Re-run the command.
 
@@ -81,7 +81,7 @@ repeat run). Red gate ⇒ no PR — fix the failing step and retry.
 
 ## Drain / integration runs
 
-**A per-issue PR got labelled `maestro:hitl`.** Its auto-merge into the
+**A per-issue PR got labelled `agent:hitl`.** Its auto-merge into the
 integration branch failed — almost always a conflict with work already integrated.
 Resolve it by hand:
 
@@ -90,7 +90,7 @@ git fetch origin
 git switch maestro/issue-<n>-<slug>
 git rebase origin/maestro/integration-<stamp>   # resolve conflicts, then:
 git push --force-with-lease
-gh issue edit <n> --remove-label maestro:hitl --add-label maestro:ready-for-agent
+gh issue edit <n> --remove-label agent:hitl --add-label agent:ready-for-agent
 ```
 
 Then re-run `/maestro:drain` to re-pick it.
@@ -101,7 +101,7 @@ first — review and `/maestro:merge_pr` (or close the integration PR) — then 
 new drain. Check the active run: `bash .maestro/scripts/integration.sh status`.
 
 **The integration PR is merged but issues are still open.** Issues are never
-auto-closed — they sit at `maestro:waiting-for-human-closure`. Close them with
+auto-closed — they sit at `agent:waiting-for-human-closure`. Close them with
 `/maestro:status close-integrated` (or `/maestro:merge_pr`, which merges *and*
 closes in one step).
 

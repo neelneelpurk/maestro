@@ -11,7 +11,7 @@ A single `issue-implementer` subagent. A Worker owns exactly one issue, in its o
 worktree, and opens exactly one PR. It never merges and never touches another issue.
 
 ## Wave
-The set of issues that are workable *right now* — open, `maestro:ready-for-agent`+`maestro:afk`, and
+The set of issues that are workable *right now* — open, `agent:ready-for-agent`+`agent:afk`, and
 with no open blockers. `/maestro:ship` fans out one Worker per issue in the current Wave.
 
 ## Drain
@@ -19,7 +19,7 @@ Repeatedly shipping successive Waves until the ready queue is empty. Within a se
 this is the `/maestro:drain` loop; over time it is the scheduled routine.
 
 ## Ready queue
-The open issues labelled `maestro:ready-for-agent` + `maestro:afk` whose blockers are all closed.
+The open issues labelled `agent:ready-for-agent` + `agent:afk` whose blockers are all closed.
 The single source of truth is `ready-issues.sh`.
 
 ## Shared brief

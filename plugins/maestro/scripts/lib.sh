@@ -39,27 +39,27 @@ unset _maestro_cfg
 
 # Triage label vocabulary. Override in config.sh if the repo already uses
 # different strings.
-: "${MAESTRO_LABEL_READY_AGENT:=maestro:ready-for-agent}"   # fully specified, AFK-ready
-: "${MAESTRO_LABEL_READY_HUMAN:=maestro:ready-for-human}"    # needs a human
-: "${MAESTRO_LABEL_NEEDS_TRIAGE:=maestro:needs-triage}"
-: "${MAESTRO_LABEL_NEEDS_INFO:=maestro:needs-info}"
-: "${MAESTRO_LABEL_WONTFIX:=maestro:wontfix}"
-: "${MAESTRO_LABEL_BUG:=maestro:bug}"
-: "${MAESTRO_LABEL_ENHANCEMENT:=maestro:enhancement}"
+: "${MAESTRO_LABEL_READY_AGENT:=agent:ready-for-agent}"   # fully specified, AFK-ready
+: "${MAESTRO_LABEL_READY_HUMAN:=agent:ready-for-human}"    # needs a human
+: "${MAESTRO_LABEL_NEEDS_TRIAGE:=agent:needs-triage}"
+: "${MAESTRO_LABEL_NEEDS_INFO:=agent:needs-info}"
+: "${MAESTRO_LABEL_WONTFIX:=agent:wontfix}"
+: "${MAESTRO_LABEL_BUG:=agent:bug}"
+: "${MAESTRO_LABEL_ENHANCEMENT:=agent:enhancement}"
 
 # Pipeline labels added by this plugin (see docs/GLOSSARY.md for the state machine).
-: "${MAESTRO_LABEL_AUTO:=maestro:auto}"                # autonomous lane; skips the ready-for-agent gate
-: "${MAESTRO_LABEL_HITL:=maestro:hitl}"                # needs a human; never auto-picked
-: "${MAESTRO_LABEL_PRD:=maestro:prd}"                  # a PRD / epic parent issue
-: "${MAESTRO_LABEL_ROADMAP:=maestro:roadmap}"          # a roadmap parent issue
-: "${MAESTRO_LABEL_TECH_DEBT:=maestro:tech-debt}"      # a tech-debt item
-: "${MAESTRO_LABEL_IN_PROGRESS:=maestro:in-progress}"  # a worker is implementing it
-: "${MAESTRO_LABEL_IN_REVIEW:=maestro:in-review}"      # ship: PR to the default branch, awaiting human review
-: "${MAESTRO_LABEL_WAITING_CLOSURE:=maestro:waiting-for-human-closure}" # drain/auto: PR merged into the integration branch
-: "${MAESTRO_LABEL_BLOCKED:=maestro:blocked}"          # board marker: has open dependencies
-: "${MAESTRO_LABEL_INTEGRATION:=maestro:integration}"  # the integration -> default-branch PR
+: "${MAESTRO_LABEL_AUTO:=agent:auto}"                # autonomous lane; skips the ready-for-agent gate
+: "${MAESTRO_LABEL_HITL:=agent:hitl}"                # needs a human; never auto-picked
+: "${MAESTRO_LABEL_PRD:=agent:prd}"                  # a PRD / epic parent issue
+: "${MAESTRO_LABEL_ROADMAP:=agent:roadmap}"          # a roadmap parent issue
+: "${MAESTRO_LABEL_TECH_DEBT:=agent:tech-debt}"      # a tech-debt item
+: "${MAESTRO_LABEL_IN_PROGRESS:=agent:in-progress}"  # a worker is implementing it
+: "${MAESTRO_LABEL_IN_REVIEW:=agent:in-review}"      # ship: PR to the default branch, awaiting human review
+: "${MAESTRO_LABEL_WAITING_CLOSURE:=agent:waiting-for-human-closure}" # drain/auto: PR merged into the integration branch
+: "${MAESTRO_LABEL_BLOCKED:=agent:blocked}"          # board marker: has open dependencies
+: "${MAESTRO_LABEL_INTEGRATION:=agent:integration}"  # the integration -> default-branch PR
 # Retained for back-compat with existing issues (no longer a pick requirement).
-: "${MAESTRO_LABEL_AFK:=maestro:afk}"
+: "${MAESTRO_LABEL_AFK:=agent:afk}"
 
 # Behaviour.
 : "${MAESTRO_MAX_PARALLEL:=3}"                          # default fan-out concurrency
@@ -95,6 +95,22 @@ maestro_repo() {
     [[ -n "$_MAESTRO_REPO" ]] || maestro_die "could not determine the GitHub repo (run inside a repo with a GitHub remote, gh authenticated)"
   fi
   printf '%s\n' "$_MAESTRO_REPO"
+}
+
+# maestro_assignee_login — print the actual GitHub login driving MAESTRO_ASSIGNEE,
+# resolving the "@me" alias to a real username so multiple people's runs on the
+# same repo (each with their own MAESTRO_ASSIGNEE) can be told apart in PR titles
+# and assignees. Cached per process.
+maestro_assignee_login() {
+  if [[ -z "${_MAESTRO_ASSIGNEE_LOGIN:-}" ]]; then
+    if [[ "$MAESTRO_ASSIGNEE" == "@me" ]]; then
+      _MAESTRO_ASSIGNEE_LOGIN="$(gh api user --jq .login 2>/dev/null || true)"
+    else
+      _MAESTRO_ASSIGNEE_LOGIN="$MAESTRO_ASSIGNEE"
+    fi
+    [[ -n "$_MAESTRO_ASSIGNEE_LOGIN" ]] || _MAESTRO_ASSIGNEE_LOGIN="$MAESTRO_ASSIGNEE"
+  fi
+  printf '%s\n' "$_MAESTRO_ASSIGNEE_LOGIN"
 }
 
 # maestro_main_root — absolute path to the MAIN working tree, even when called from

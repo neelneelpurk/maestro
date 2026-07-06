@@ -22,10 +22,10 @@ git worktrees. Keep to them.
 ## Pull requests
 - Run the quality gate before opening any PR (`.maestro/scripts/quality-gate.sh`). A **red gate means no PR**.
 - `/maestro:ship` (a single issue): open a PR to the **default branch** with `Closes #<n>`.
-- `drain` / `maestro:auto`: open the per-issue PR against the **integration branch** (never the default branch). It is merged automatically once green.
+- `/maestro:drain` / `/maestro:auto`: open the per-issue PR against the **integration branch** (never the default branch). It is merged automatically once green.
 - Every PR and every issue/PR comment the pipeline posts **starts with the AI disclaimer**.
 
 ## Merging & closure
 - **Never merge the integration PR or the default branch yourself.** That is the human's single review gate.
-- **Never auto-close an issue.** When its work is merged into the integration branch, relabel it `maestro:waiting-for-human-closure`; the human closes it when they merge the integration PR.
+- **Never auto-close an issue.** When its work is merged into the integration branch, relabel it `agent:waiting-for-human-closure`; the human closes it when they merge the integration PR.
 - The full label state machine is in [docs/GLOSSARY.md](../../docs/GLOSSARY.md).
