@@ -66,10 +66,13 @@ fi
 num="${url##*/}"
 
 if [[ "$base" == "$default" ]]; then
-  # Ship (supervised): await human review.
+  # Ship (supervised): await human review. Assign + request review from whoever
+  # owns the issue so it surfaces in their GitHub inbox, not just the tracker.
   gh issue edit "$issue" --add-label "$MAESTRO_LABEL_IN_REVIEW" \
     --remove-label "$MAESTRO_LABEL_READY_AGENT" --remove-label "$MAESTRO_LABEL_IN_PROGRESS" \
     --remove-label "$MAESTRO_LABEL_AUTO" >/dev/null 2>&1 || true
+  gh pr edit "$num" --add-assignee "$MAESTRO_ASSIGNEE" >/dev/null 2>&1 || true
+  gh pr edit "$num" --add-reviewer "$MAESTRO_ASSIGNEE" >/dev/null 2>&1 || true
   gh issue comment "$issue" --body "$(maestro_disclaimer)
 Opened PR for review: ${url}" >/dev/null 2>&1 || true
 else

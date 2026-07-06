@@ -4,7 +4,7 @@
 
 ## Option A — Claude Code routine (`/schedule` or `/loop`)
 
-- Continuous, self-paced, in your session: `/loop /maestro:auto` (roadmap → drain, repeatedly) or `/loop /maestro:drain` (just keep draining the ready queue).
+- Continuous, self-paced, in your session: `/loop /maestro:auto [goal] -- [context]` (roadmap → drain, repeatedly, optionally steered by a goal) or `/loop /maestro:drain` (just keep draining the ready queue).
 - Recurring remote agent: use the `/schedule` skill with a prompt like:
 
 ```
@@ -28,4 +28,4 @@ Requires the `maestro` plugin installed and `gh` authenticated for the cron user
 ## Notes
 - Each run opens (or reuses) one integration PR — your single review gate. Merge it when you're happy, then `/maestro:status close-integrated`.
 - Keep `MAESTRO_MAX_PARALLEL` modest (2–3) on a schedule to stay within API/compute limits.
-- `maestro:auto`-labelled issues skip the `maestro:ready-for-agent` gate, so scheduled `/maestro:auto` runs need no human triage to proceed.
+- `agent:auto`-labelled issues skip the `agent:ready-for-agent` gate, so scheduled `/maestro:auto` runs need no human triage to proceed.

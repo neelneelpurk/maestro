@@ -5,7 +5,7 @@
 # the issues it covers, in one step.
 #
 #   • No PR number → target the ACTIVE integration run's PR. Merging it then closes
-#     every issue in that run (the `maestro:waiting-for-human-closure` set) and
+#     every issue in that run (the `agent:waiting-for-human-closure` set) and
 #     clears the run state — i.e. `gh pr merge` + `integration.sh close-integrated`.
 #   • With a PR number → merge that PR. A per-issue / ship PR closes its linked
 #     issue via `Closes #n` on merge.

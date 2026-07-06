@@ -61,18 +61,18 @@ flowchart TD
 |---|---|
 | `/maestro:init` | One-time setup: labels, `.maestro/` runtime, PR template — **and** a short discussion that writes your project context into `CLAUDE.md`, `AGENTS.md`, `.claude/rules/maestro.md`, `docs/GLOSSARY.md`. |
 | `/maestro:plan-with-agent` | Grill a feature against the domain model (updating `CONTEXT.md` + ADRs), then publish a **PRD** as a parent issue. |
-| `/maestro:issues <prd#>` | Break the PRD into **sub-issues** with **native dependencies**, labelled `maestro:ready-for-agent`, assigned to you. |
+| `/maestro:issues <prd#>` | Break the PRD into **sub-issues** with **native dependencies**, labelled `agent:ready-for-agent`, assigned to you. |
 | `/maestro:share_implementation_plan <issue#>` | Draft a **test-first plan** for an issue and post it as a comment — no code, no PR. Review the approach before building. |
 | `/maestro:ship <issue#>` | Implement **one** issue (supervised) — a background worker opens a PR to the default branch; awaits your review. |
 | `/maestro:drain` | Implement **all** your ready issues in **dependency order** on an **integration branch**; each per-issue PR auto-merges into it; the integration PR is your one review gate. |
-| `/maestro:auto` | Autonomous loop: `maestro:roadmap` → `drain`, repeatedly. Issues it creates are labelled `maestro:auto` and skip the human `maestro:ready-for-agent` gate. |
-| `/maestro:roadmap` | Analyze what's already shipped → propose next features + tech-debt → create issues under a roadmap parent + milestone. |
-| `/maestro:code-feedback [pr#]` | Review a PR (inline GitHub review) or the whole codebase (report + optional `maestro:ready-for-agent` `maestro:tech-debt` issues). Asks you for scope + focus. |
+| `/maestro:auto [goal] [-- context]` | Autonomous loop harness: `roadmap` → `drain`, repeatedly, until caught up (or a given goal is fully met). Issues it creates are labelled `agent:auto` and skip the human `agent:ready-for-agent` gate. |
+| `/maestro:roadmap [goal] [-- context]` | Analyze what's already shipped → propose next features + tech-debt (or work scoped to a given goal) → create issues under a roadmap parent + milestone. |
+| `/maestro:code-feedback [pr#]` | Review a PR (inline GitHub review) or the whole codebase (report + optional `agent:ready-for-agent` `agent:tech-debt` issues). Asks you for scope + focus. |
 | `/maestro:code-architecture-map` | Map the codebase (modules, seams, dependencies) → `docs/architecture-map.md` + optional HTML report. |
 | `/maestro:status [close-integrated]` | The pipeline board (now with a **recent-runs** summary); or close out a merged integration run. |
 | `/maestro:merge_pr [pr#]` | Merge a PR and **close the issues it covers** in one step. No number → the integration PR + its whole run. Your manual review gate. |
 
-The coordinator commands (`ship`, `drain`, `maestro:auto`) **only coordinate** — they dispatch **background** `issue-implementer` workers and stay responsive, so **you can keep participating** in the same session.
+The coordinator commands (`ship`, `drain`, `auto`) **only coordinate** — they dispatch **background** `issue-implementer` workers and stay responsive, so **you can keep participating** in the same session.
 
 ## Install
 
@@ -94,9 +94,9 @@ claude plugin install maestro@maestro
 
 A run is fully autonomous below the default branch, with one human gate at it:
 
-- `drain`/`maestro:auto` open **one integration branch** off the default branch and **one integration PR** (integration → default). That PR is **never auto-merged** — it is your single review gate, and it collects a running checklist of integrated issues.
+- `drain`/`auto` open **one integration branch** off the default branch and **one integration PR** (integration → default). That PR is **never auto-merged** — it is your single review gate, and it collects a running checklist of integrated issues.
 - Each issue gets its own branch (created with `gh issue develop`, natively linked) off the integration branch; its **per-issue PR targets the integration branch and is merged automatically once the quality gate is green**. Dependents build on already-integrated work, so the dependency queue self-progresses.
-- Issues are **never auto-closed** — they move to `maestro:waiting-for-human-closure`. When you merge the integration PR, run `/maestro:status close-integrated` to close them.
+- Issues are **never auto-closed** — they move to `agent:waiting-for-human-closure`. When you merge the integration PR, run `/maestro:status close-integrated` to close them.
 
 ```mermaid
 gitGraph
@@ -124,21 +124,30 @@ gitGraph
 
 See [docs/GLOSSARY.md](docs/GLOSSARY.md) for the full label state machine and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design.
 
+## Multiple people, one repo
+
+maestro is GitHub-native on purpose, so a team can run it side by side without a shared coordinator process:
+
+- Every queue query (`ready-issues.sh`) filters to issues **assigned to `MAESTRO_ASSIGNEE`** (default `@me`). Each teammate points their own maestro at their own assignee — two people running `/maestro:drain` concurrently in the same repo simply never pick up each other's issues.
+- Each person's `drain`/`auto` run gets its **own integration branch + PR**, titled `Integration (@<their-login>): <goal or "ready queue">` and assigned to them, so reviewers can tell whose run is whose at a glance instead of guessing from a bare timestamp.
+- Ship PRs are assigned to, and request review from, the issue's `MAESTRO_ASSIGNEE` — so they land in the right person's GitHub review queue, not just the tracker.
+- Everything else stays native GitHub: issue comments are the shared log, `blocked_by` dependencies are the shared plan, and labels are the shared state — so teammates (and their agents) reading the tracker directly see the same picture your session does.
+
 ## What's inside
 
 | Block | Where | What |
 |---|---|---|
 | **Scripts** | `plugins/maestro/scripts/` | bash + `gh` + `jq`: native sub-issues/dependencies, `gh issue develop` links, worktrees, the integration run, quality gate, queue queries |
 | **Subagents** | `plugins/maestro/agents/` | `issue-implementer` — dispatched in the **background**, one per issue |
-| **Skills** | `plugins/maestro/skills/` | `plan-with-agent`, `ship`, `drain`, `maestro:auto`, `maestro:roadmap`, `code-feedback`, `code-architecture-map`, `implement-issue` |
+| **Skills** | `plugins/maestro/skills/` | `plan-with-agent`, `ship`, `drain`, `auto`, `roadmap`, `code-feedback`, `code-architecture-map`, `implement-issue` |
 | **Hooks** | `plugins/maestro/hooks/` | PR quality-gate backstop + AI-disclaimer guard (PreToolUse) |
 | **Rules** | seeded into the repo | `.claude/rules/maestro.md` + `CLAUDE.md` — **inherited by every worker**, even inside worktrees |
-| **Loops** | `/maestro:drain`, `/maestro:auto` | self-paced via background-worker completion + `/loop` / `ScheduleWakeup` |
+| **Loops** | `/maestro:drain`, `/maestro:auto [goal]` | self-paced via background-worker completion + `/loop` / `ScheduleWakeup`; `auto` optionally steered by a freeform goal + context |
 
 ## Safety
 - **You are the merge gate** — the integration PR is never auto-merged; `ship` PRs await your review.
 - **No red PRs** — the quality gate runs before any PR opens (and a PreToolUse hook backstops manual `gh pr create`).
-- **No auto-close** — issues move to `maestro:waiting-for-human-closure`; you close them when you merge the integration PR.
+- **No auto-close** — issues move to `agent:waiting-for-human-closure`; you close them when you merge the integration PR.
 - **Isolation** — one git worktree + branch per issue; concurrency capped by `MAESTRO_MAX_PARALLEL`.
 
 ## Further reading

@@ -22,13 +22,13 @@ If `$S` is missing, STOP and ask the user to run `/maestro:init`.
 ## Procedure
 
 1. **Read it.** `gh issue view <n> --json title,body,labels,state,comments`. Note the acceptance criteria, any prior plan comments, and "Out of scope".
-2. **Re-verify it's workable** (queues can lag): state OPEN; labelled `maestro:ready-for-agent` or `maestro:auto`; and `bash "$S/blocked-by.sh" <n>` prints nothing. If not, STOP and report — do not implement.
+2. **Re-verify it's workable** (queues can lag): state OPEN; labelled `agent:ready-for-agent` or `agent:auto`; and `bash "$S/blocked-by.sh" <n>` prints nothing. If not, STOP and report — do not implement.
 3. **Shared brief.** Read `CONTEXT.md`, `docs/adr/`, and the project's `CLAUDE.md`/rules. Use that vocabulary; respect those decisions and recorded learnings.
 4. **Worktree off the base.**
    ```
    WT=$(bash "$S/make-worktree.sh" <n> --base <base>)
    cd "$WT"
-   gh issue edit <n> --add-label maestro:in-progress
+   gh issue edit <n> --add-label agent:in-progress
    ```
 5. **Post your plan + decomposition to the issue** (so the work is reviewable as it happens):
    ```
@@ -54,8 +54,8 @@ If `$S` is missing, STOP and ask the user to run `/maestro:init`.
    ```
    bash "$S/open-pr.sh" <n> --base <base> --body-file changes.md
    ```
-   - base = default branch → PR with `Closes #<n>`, issue relabelled `maestro:in-review`.
-   - base = integration branch → per-issue PR merged into the integration branch automatically; issue relabelled `maestro:waiting-for-human-closure` (not closed).
+   - base = default branch → PR with `Closes #<n>`, issue relabelled `agent:in-review`.
+   - base = integration branch → per-issue PR merged into the integration branch automatically; issue relabelled `agent:waiting-for-human-closure` (not closed).
 9. **Stop.** Report the issue number, the PR URL, and a one-line summary. Do not merge; do not pick up another issue.
 
 ## Constraints

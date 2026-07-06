@@ -74,11 +74,11 @@ elif [[ -f "${tpl}/pull_request.md" ]]; then
   echo "   wrote .github/pull_request_template.md"
 fi
 if [[ ! -f .github/ISSUE_TEMPLATE/prd.md && -f "${tpl}/prd.md" ]]; then
-  { printf -- '---\nname: PRD\nabout: Product requirements (parent epic); usually created by /maestro:plan-with-agent\nlabels: maestro:prd\n---\n\n'; cat "${tpl}/prd.md"; } > .github/ISSUE_TEMPLATE/prd.md
+  { printf -- '---\nname: PRD\nabout: Product requirements (parent epic); usually created by /maestro:plan-with-agent\nlabels: agent:prd\n---\n\n'; cat "${tpl}/prd.md"; } > .github/ISSUE_TEMPLATE/prd.md
   echo "   wrote .github/ISSUE_TEMPLATE/prd.md"
 fi
 if [[ ! -f .github/ISSUE_TEMPLATE/task.md && -f "${tpl}/task.md" ]]; then
-  { printf -- '---\nname: Task (vertical slice)\nabout: One implementable vertical slice; usually created by /maestro:issues\nlabels: maestro:ready-for-agent\n---\n\n'; cat "${tpl}/task.md"; } > .github/ISSUE_TEMPLATE/task.md
+  { printf -- '---\nname: Task (vertical slice)\nabout: One implementable vertical slice; usually created by /maestro:issues\nlabels: agent:ready-for-agent\n---\n\n'; cat "${tpl}/task.md"; } > .github/ISSUE_TEMPLATE/task.md
   echo "   wrote .github/ISSUE_TEMPLATE/task.md"
 fi
 echo

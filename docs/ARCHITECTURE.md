@@ -12,8 +12,9 @@
 /maestro:share_implementation_plan <issue>  draft a test-first plan → post it as an issue comment (no code)
 /maestro:ship <issue>    one issue → PR to the default branch → in-review (supervised)
 /maestro:drain           all ready issues → integration branch (dependency-ordered, per-issue PRs auto-merged)
-/maestro:auto            loop: roadmap (auto-labelled) → drain, until caught up
-/maestro:roadmap         analyze what's shipped → next features + tech-debt → issues
+/maestro:auto [goal]     loop harness: roadmap (auto-labelled) → drain, repeatedly, until caught up
+                         or a given goal is fully covered; goal/context pass through every iteration
+/maestro:roadmap [goal]  analyze what's shipped → next features + tech-debt (or goal-scoped work) → issues
 /maestro:code-feedback   review a PR or the whole codebase (GitHub PR reviews)
 /maestro:code-architecture-map  module/seam/dependency map
 /maestro:review          review any PR (multi-dimension) → post a GitHub review
@@ -31,7 +32,7 @@ events. The quality gate refuses a **false green**: if nothing runs it fails unl
 
 ## Execution model — coordinator + background workers
 
-`ship`/`drain`/`maestro:auto` are **coordinators**: they never implement. They dispatch `issue-implementer` subagents with the **`Agent` tool, `run_in_background: true`**, so the main agent stays interactive and **the user can participate**; it's notified as each worker finishes. Workers run concurrently up to `MAESTRO_MAX_PARALLEL`. The custom agent type requires a **session restart** to be spawnable (the agent registry is fixed at session start; skills hot-load).
+`ship`/`drain`/`auto` are **coordinators**: they never implement. They dispatch `issue-implementer` subagents with the **`Agent` tool, `run_in_background: true`**, so the main agent stays interactive and **the user can participate**; it's notified as each worker finishes. Workers run concurrently up to `MAESTRO_MAX_PARALLEL`. The custom agent type requires a **session restart** to be spawnable (the agent registry is fixed at session start; skills hot-load).
 
 ```mermaid
 sequenceDiagram
@@ -57,13 +58,13 @@ sequenceDiagram
 
 Full autonomy below the default branch, one human gate at it:
 
-1. `integration.sh start` creates an **integration branch** (seeded with an empty commit so the PR has a diff) off the default branch and opens one **integration PR** (integration → default), labelled `maestro:integration`. Never auto-merged.
+1. `integration.sh start` creates an **integration branch** (seeded with an empty commit so the PR has a diff) off the default branch and opens one **integration PR** (integration → default), labelled `agent:integration`. Never auto-merged.
 2. Each issue branches off the integration branch via `gh issue develop` (native branch↔issue link). Its **per-issue PR targets the integration branch** and is **merged automatically once the quality gate is green** (`gh pr merge --auto`, falling back to an immediate squash when there are no required checks).
-3. The issue is relabeled **`maestro:waiting-for-human-closure`** (never auto-closed). A progress comment + checklist entry is added to the integration PR, linking the issue.
-4. The dependency queue (`ready-issues.sh`) treats a blocker as cleared when it is **closed or `maestro:waiting-for-human-closure`** — so dependents, which branch off the now-updated integration branch, become workable and the queue self-progresses.
-5. The human reviews and merges the integration PR; `/maestro:status close-integrated` then closes that run's `maestro:waiting-for-human-closure` issues.
+3. The issue is relabeled **`agent:waiting-for-human-closure`** (never auto-closed). A progress comment + checklist entry is added to the integration PR, linking the issue.
+4. The dependency queue (`ready-issues.sh`) treats a blocker as cleared when it is **closed or `agent:waiting-for-human-closure`** — so dependents, which branch off the now-updated integration branch, become workable and the queue self-progresses.
+5. The human reviews and merges the integration PR; `/maestro:status close-integrated` then closes that run's `agent:waiting-for-human-closure` issues.
 
-`/maestro:ship` skips all this: one issue → PR to the default branch with `Closes #n` → `maestro:in-review`.
+`/maestro:ship` skips all this: one issue → PR to the default branch with `Closes #n` → `agent:in-review`.
 
 ## GitHub-native data model
 
@@ -74,7 +75,7 @@ Full autonomy below the default branch, one human gate at it:
 
 ## Labels & state machine
 
-See [GLOSSARY.md](GLOSSARY.md). In short: type (`maestro:prd`/`maestro:roadmap`/`maestro:bug`/`maestro:enhancement`/`maestro:tech-debt`), gate/mode (`maestro:ready-for-agent` / `maestro:auto` skips the gate / `maestro:hitl`), and execution state (`maestro:in-progress` → `maestro:in-review` for ship, or `maestro:waiting-for-human-closure` for drain/auto; `maestro:blocked` is a board marker). The integration PR carries `maestro:integration`.
+See [GLOSSARY.md](GLOSSARY.md). In short: type (`agent:prd`/`agent:roadmap`/`agent:bug`/`agent:enhancement`/`agent:tech-debt`), gate/mode (`agent:ready-for-agent` / `agent:auto` skips the gate / `agent:hitl`), and execution state (`agent:in-progress` → `agent:in-review` for ship, or `agent:waiting-for-human-closure` for drain/auto; `agent:blocked` is a board marker). The integration PR carries `agent:integration`.
 
 ## Rules & enforcement (inherited by every worker)
 
@@ -86,6 +87,8 @@ Subagents — including background workers in worktrees — inherit the repo's `
 - **`.maestro/` is machine-local runtime** (gitignored), referenced by **absolute path**; `lib.sh` resolves config + shared state from the **main worktree root** (via `git --git-common-dir`) so scripts work correctly inside worktrees.
 - **bash 3.2 compatible** (no `mapfile`/assoc-arrays) — macOS `/bin/bash`.
 - **Await review at the default branch**; full autonomy on the integration branch.
+- **Multi-user by construction, no shared coordinator** — every queue query is scoped to `MAESTRO_ASSIGNEE`, so teammates each running their own `drain`/`auto` never contend for the same issue; each gets their own integration branch/PR, titled and assigned to their resolved login (`maestro_assignee_login`) so reviewers can tell concurrent runs apart. The only shared mutable state is GitHub itself (labels, comments, dependencies) plus the local `.maestro/log.jsonl`, which is append-only and per-clone.
+- **The integration PR's checklist is derived, not accumulated** — `integration.sh` recomputes the title + body from `.maestro/log.jsonl` (filtered by the integration PR number) on every `integrate` call instead of read-modify-writing the PR body, so two background workers finishing at nearly the same time can't silently drop each other's checklist line.
 
 ## Extension points
 

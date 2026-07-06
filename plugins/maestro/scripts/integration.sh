@@ -7,6 +7,9 @@
 # integration branch and are merged into it automatically; their issues are NOT
 # closed — they move to `waiting-for-human-closure`.
 #
+#   integration.sh start [goal ...]   start (or reuse) a run; goal is freeform,
+#                                      folded into the PR title/body for context.
+#
 # Run state lives in .maestro/integration.local.md (gitignored).
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
@@ -17,6 +20,46 @@ repo="$(maestro_repo)"; default="$(maestro_default_branch)"
 
 _field() { [[ -f "$STATE" ]] && sed -n "s/^$1: //p" "$STATE" | head -1 || true; }
 _int_open() { local n; n="$(_field pr_number)"; [[ -n "$n" ]] && [[ "$(gh pr view "$n" --json state --jq .state 2>/dev/null)" == "OPEN" ]]; }
+_plural() { [[ "$1" -eq 1 ]] && echo "" || echo "s"; }
+
+# The integrated-issues checklist is derived from the durable log (never from
+# the PR body itself), so concurrent background workers integrating at nearly
+# the same time can't clobber each other's entries — the worst case is a body
+# that's briefly one entry behind, self-healed on the very next integrate call.
+_int_checklist() {
+  local intpr="$1" log; log="$(maestro_state_dir)/log.jsonl"
+  [[ -f "$log" ]] || return 0
+  jq -s -r --arg intpr "$intpr" '
+    map(select(.event == "integration-merge" and ((.intpr // "") == $intpr)))
+    | sort_by(.ts)
+    | map("- [x] #" + .issue + " " + (.title // "") + " (PR #" + .pr + ")")
+    | .[]
+  ' "$log" 2>/dev/null || true
+}
+
+# _int_render <pr#> <branch> — recompute the title + body from the goal (state)
+# and the checklist (log) and write them in one shot. Idempotent: safe to call
+# from `start` and after every `integrate`.
+_int_render() {
+  local intpr="$1" branch="$2" goal login checklist count title body
+  goal="$(_field goal)"
+  login="$(maestro_assignee_login)"
+  checklist="$(_int_checklist "$intpr")"
+  count=0; [[ -n "$checklist" ]] && count="$(printf '%s\n' "$checklist" | grep -c '^- \[x\]')"
+
+  if [[ -n "$goal" ]]; then title="Integration (@${login}): ${goal}"
+  else title="Integration (@${login}): ready queue"; fi
+  [[ "$count" -gt 0 ]] && title="${title} — ${count} issue$(_plural "$count") integrated"
+  title="$(printf '%s' "$title" | cut -c1-120)"
+
+  body="$(maestro_disclaimer)
+Integration PR for a maestro drain/auto run$( [[ -n "$goal" ]] && printf ' toward: **%s**' "$goal" ). Per-issue PRs merge into \`${branch}\`; **this** PR is your single review gate to \`${default}\` — it is never auto-merged.
+
+## Integrated issues
+$( [[ -n "$checklist" ]] && printf '%s\n' "$checklist" || echo '_none yet_' )"
+
+  gh pr edit "$intpr" --title "$title" --body "$body" >/dev/null 2>&1 || true
+}
 
 cmd="${1:-status}"; shift || true
 case "$cmd" in
@@ -24,6 +67,7 @@ case "$cmd" in
     if [[ -f "$STATE" ]] && _int_open; then
       _field branch; exit 0   # reuse the active run
     fi
+    goal="$*"
     stamp="$(date +%Y%m%d-%H%M%S)"
     branch="${MAESTRO_INTEGRATION_PREFIX}${stamp}"
     git fetch origin "$default" --quiet 2>/dev/null || true
@@ -39,24 +83,30 @@ case "$cmd" in
     else
       rm -rf "$tmpwt"; maestro_die "could not create the integration branch ${branch}"
     fi
+    login="$(maestro_assignee_login)"
+    if [[ -n "$goal" ]]; then title="Integration (@${login}): ${goal}"
+    else title="Integration (@${login}): ready queue"; fi
+    title="$(printf '%s' "$title" | cut -c1-120)"
     body="$(maestro_disclaimer)
-Integration PR for an maestro drain/auto run. Per-issue PRs merge into \`${branch}\`; **this** PR is your single review gate to \`${default}\` — it is never auto-merged.
+Integration PR for a maestro drain/auto run$( [[ -n "$goal" ]] && printf ' toward: **%s**' "$goal" ). Per-issue PRs merge into \`${branch}\`; **this** PR is your single review gate to \`${default}\` — it is never auto-merged.
 
 ## Integrated issues
-"
-    url="$(gh pr create --title "maestro integration ${stamp}" --body "$body" --head "$branch" --base "$default" 2>&1 | grep -oE 'https://github.com/[^ ]+/pull/[0-9]+' | head -1)"
+_none yet_"
+    url="$(gh pr create --title "$title" --body "$body" --head "$branch" --base "$default" 2>&1 | grep -oE 'https://github.com/[^ ]+/pull/[0-9]+' | head -1)"
     [[ -n "$url" ]] || maestro_die "could not open the integration PR"
     num="${url##*/}"
     gh pr edit "$num" --add-label "$MAESTRO_LABEL_INTEGRATION" >/dev/null 2>&1 || true
+    gh pr edit "$num" --add-assignee "$MAESTRO_ASSIGNEE" >/dev/null 2>&1 || true
     mkdir -p "$(dirname "$STATE")"
-    cat > "$STATE" <<EOF
----
-branch: ${branch}
-pr_number: ${num}
-pr_url: ${url}
-default_base: ${default}
-EOF
-    echo "---" >> "$STATE"
+    {
+      echo "---"
+      echo "branch: ${branch}"
+      echo "pr_number: ${num}"
+      echo "pr_url: ${url}"
+      echo "default_base: ${default}"
+      echo "goal: $(printf '%s' "$goal" | tr '\n' ' ')"
+      echo "---"
+    } > "$STATE"
     maestro_log integration-start branch="$branch" pr="$num"
     maestro_warn "integration run started: ${url}"
     printf '%s\n' "$branch"
@@ -70,6 +120,7 @@ EOF
     # integration branch, relabel the issue, and log progress on the integration PR.
     issue="${1:?usage: integration.sh integrate <issue> <pr>}"; pr="${2:?pr required}"
     intpr="$(_field pr_number)"
+    branch="$(_field branch)"
     title="$(gh issue view "$issue" --json title --jq .title 2>/dev/null || echo "#$issue")"
     if gh pr merge "$pr" --squash --auto >/dev/null 2>&1 || gh pr merge "$pr" --squash >/dev/null 2>&1; then
       gh issue edit "$issue" \
@@ -81,12 +132,11 @@ Implemented and merged into the integration branch via PR #${pr}. Awaiting human
       if [[ -n "$intpr" ]]; then
         gh pr comment "$intpr" --body "$(maestro_disclaimer)
 ✅ Integrated #${issue} (${title}) via PR #${pr}." >/dev/null 2>&1 || true
-        # Tick the checklist in the integration PR body.
-        cur="$(gh pr view "$intpr" --json body --jq .body 2>/dev/null || true)"
-        printf '%s\n- [x] #%s %s (PR #%s)\n' "$cur" "$issue" "$title" "$pr" > /tmp/intbody.$$ \
-          && gh pr edit "$intpr" --body-file /tmp/intbody.$$ >/dev/null 2>&1; rm -f /tmp/intbody.$$
+        maestro_log integration-merge issue="$issue" pr="$pr" intpr="$intpr" title="$title"
+        _int_render "$intpr" "$branch"
+      else
+        maestro_log integration-merge issue="$issue" pr="$pr" title="$title"
       fi
-      maestro_log integration-merge issue="$issue" pr="$pr"
       echo "integrated #${issue} (PR #${pr})"
     else
       gh issue edit "$issue" --add-label "$MAESTRO_LABEL_HITL" --remove-label "$MAESTRO_LABEL_IN_PROGRESS" >/dev/null 2>&1 || true

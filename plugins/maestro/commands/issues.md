@@ -15,7 +15,7 @@ Present the breakdown as a numbered list (title, AFK/HITL, blocked-by, which use
 
 ## 2. Publish the slices (in dependency order)
 For each approved slice, create a GitHub issue following the task template (also seeded at `.github/ISSUE_TEMPLATE/task.md`): a "What to build" (end-to-end behaviour, no file paths/code), an "Acceptance criteria" checklist, and a "Blocked by" note. Then make it native to the pipeline:
-- create it **assigned to `@me`**, labelled **`maestro:ready-for-agent`** (use `maestro:hitl` instead for HITL slices; add `maestro:enhancement`/`maestro:bug` as apt);
+- create it **assigned to `@me`**, labelled **`agent:ready-for-agent`** (use `agent:hitl` instead for HITL slices; add `agent:enhancement`/`agent:bug` as apt);
 - link it as a sub-issue of the PRD: `.maestro/scripts/subissue.sh add <prd> <child>`;
 - set dependencies: `.maestro/scripts/dependency.sh add <issue> <blocker>` (publish blockers first so you can reference them).
 

@@ -24,7 +24,7 @@ You also inherit this repo's `CLAUDE.md` and `.claude/rules/maestro.md` — obey
 - **Red quality gate ⇒ no PR.** Fix it; if you can't, stop and report.
 - **Strictly test-first** — no production code without a failing test that demands it.
 - **Record on the issue:** post your implementation plan when you start and your changes summary at PR time (the skill does this via `issue-note.sh`), so progress is trackable.
-- If the issue isn't workable (not open, missing `maestro:ready-for-agent`/`maestro:auto`, or has open blockers), stop and report — don't implement.
+- If the issue isn't workable (not open, missing `agent:ready-for-agent`/`agent:auto`, or has open blockers), stop and report — don't implement.
 
 ## When done
 
